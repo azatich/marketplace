@@ -60,22 +60,128 @@ export class AuthController {
 
       const token = JWTUtils.generate({
         userId: userData.id,
-        role: UserRole.CLIENT
+        role: UserRole.CLIENT,
       });
 
       const response: SignUpResponse = {
         success: true,
-        message: 'Регистрация успешна',
+        message: "Регистрация успешна",
         token,
         user: {
           id: userData.id,
           email,
           firstName,
           lastName,
-        }
+        },
       };
 
       res.status(201).json(response);
+    } catch (error) {
+      console.error("Signup error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Внутренняя ошибка сервера",
+      });
+    }
+  }
+
+  static async sellerSignup(req: Request, res: Response) {
+    try {
+      const {
+        email,
+        password,
+        storeName,
+        description,
+        category,
+        sellerFirstName,
+        sellerLastName,
+        phone,
+      } = req.body;
+
+      const { data: existingUser } = await supabase
+        .from("users")
+        .select("email")
+        .eq("email", email)
+        .single();
+
+      if (existingUser) {
+        res.status(409).json({
+          success: false,
+          message: "Пользователь с таким email уже существует",
+        });
+        return;
+      }
+
+      const saltRounds = 10;
+      const passwordHash = await bcrypt.hash(password, saltRounds);
+
+      // Создаем пользователя
+      const { data: userDataInUsersTable, error: userError } = await supabase
+        .from("users")
+        .insert({
+          email,
+          password: passwordHash,
+          first_name: sellerFirstName,
+          last_name: sellerLastName,
+          role: UserRole.SELLER,
+        })
+        .select()
+        .single();
+
+      if (userError || !userDataInUsersTable) {
+        console.error("User creation error:", userError);
+        res.status(500).json({
+          success: false,
+          message: "Ошибка при создании пользователя",
+          error: userError?.message,
+        });
+        return;
+      }
+
+      const { data: userDataInSellersTable, error: sellerError } =
+        await supabase
+          .from("sellers")
+          .insert({
+            user_id: userDataInUsersTable.id,
+            storeName,
+            description,
+            phone,
+            category,
+            approved: false,
+          })
+          .select()
+          .single();
+
+      if (sellerError) {
+        await supabase.from("users").delete().eq("id", userDataInUsersTable.id);
+
+        res.status(500).json({
+          success: false,
+          message: "Ошибка создания профиля продавца",
+          error: sellerError,
+        });
+        return;
+      }
+
+      const token = JWTUtils.generate({
+        userId: userDataInUsersTable.id,
+        role: UserRole.SELLER,
+      });
+
+      res.status(201).json({
+        success: true,
+        message: "Продавец успешно зарегистрирован",
+        token,
+        data: {
+          user: {
+            id: userDataInUsersTable.id,
+            email: userDataInUsersTable.email,
+            firstName: sellerFirstName,
+            lastName: sellerLastName,
+          },
+          seller: userDataInSellersTable,
+        },
+      });
     } catch (error) {
       console.error("Signup error:", error);
       res.status(500).json({

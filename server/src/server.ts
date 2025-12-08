@@ -9,17 +9,17 @@ import authRouter from "./routes/auth";
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8000;
 
 const supabase = connectDb(
   process.env.SUPABASE_URL!,
-  process.env.SUPABASE_KEY!
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
 app.use(
   cors({
     origin: ["http://localhost:3000"],
-    credentials: true, // для работы с cookies
+    credentials: true,
   })
 );
 app.use(express.json());
