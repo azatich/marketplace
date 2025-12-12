@@ -1,7 +1,7 @@
 import React from 'react'
 import { SellerFormData } from '../types';
 
-const SellerStepThree = ({
+export const SellerStepThree = ({
   formData,
   setFormData,
   errors
@@ -72,5 +72,3 @@ const SellerStepThree = ({
     </form>
   )
 }
-
-export default SellerStepThree

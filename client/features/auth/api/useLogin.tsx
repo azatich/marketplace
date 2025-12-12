@@ -8,10 +8,5 @@ export const useLogin = () => {
       const res = await api.post("/auth/login", data);
       return res.data;
     },
-    onSuccess: (data) => {
-      if (data.data?.token) {
-        localStorage.setItem("token", data.data.token);
-      }
-    },
   });
 };

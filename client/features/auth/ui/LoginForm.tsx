@@ -6,7 +6,7 @@ import { AxiosError } from "axios";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
-const LoginForm = () => {
+export const LoginForm = () => {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -44,15 +44,20 @@ const LoginForm = () => {
 
           toast.error("Ошибка при регистрации!", {
             description: errorMessage,
-            duration: 5000,
+            duration: 3000,
+            closeButton: true,
             style: {
-              background: "#ef4444",
+              background: "linear-gradient(135deg, #dc2626 0%, #991b1b 100%)",
               color: "#ffffff",
-              border: "1px solid #dc2626",
-              borderRadius: "8px",
-              padding: "16px",
+              border: "1px solid rgba(220, 38, 38, 0.3)",
+              borderRadius: "12px",
+              padding: "16px 20px",
+              boxShadow:
+                "0 10px 40px rgba(220, 38, 38, 0.3), 0 0 0 1px rgba(220, 38, 38, 0.1)",
+              backdropFilter: "blur(10px)",
             },
             className: "toast-error",
+            icon: " ",
           });
         },
       });
@@ -111,14 +116,6 @@ const LoginForm = () => {
           </div>
         </div>
 
-        {error && (
-          <div className="bg-red-200 text-red-900 p-2.5 rounded-xl text-sm">
-            {error instanceof AxiosError
-              ? error.response?.data.message
-              : "Произашла ошибка"}
-          </div>
-        )}
-
         <div className="pt-2">
           <button
             type="submit"
@@ -132,5 +129,3 @@ const LoginForm = () => {
     </div>
   );
 };
-
-export default LoginForm;

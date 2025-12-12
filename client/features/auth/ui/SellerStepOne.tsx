@@ -1,7 +1,7 @@
 import { Lock, Mail, Store } from "lucide-react";
 import { SellerFormData } from "../types";
 
-const SellerStepOne = ({
+export const SellerStepOne = ({
   formData,
   setFormData,
   errors
@@ -60,5 +60,3 @@ const SellerStepOne = ({
     </form>
   );
 };
-
-export default SellerStepOne;

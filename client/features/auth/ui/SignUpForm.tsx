@@ -2,10 +2,10 @@
 
 import { Lock, Mail } from "lucide-react";
 import { useState } from "react";
-import { useSignUp } from "../api/useSignUp";
 import { AxiosError } from "axios";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useSignUp } from "../api/useSignUp";
 
 export const SignUpForm = () => {
   const [formData, setFormData] = useState({

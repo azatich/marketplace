@@ -2,7 +2,7 @@ import React from "react";
 import { SellerFormData } from "../types";
 import { CircleCheckBig, Store } from "lucide-react";
 
-const SellerStepFour = ({ formData }: { formData: SellerFormData }) => {
+export const SellerStepFour = ({ formData }: { formData: SellerFormData }) => {
   return (
     <div className="flex-1 flex flex-col items-center justify-center text-center">
       <div className="bg-green-50 p-3 rounded-full mt-4">
@@ -34,5 +34,3 @@ const SellerStepFour = ({ formData }: { formData: SellerFormData }) => {
     </div>
   );
 };
-
-export default SellerStepFour;

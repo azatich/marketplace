@@ -1,10 +1,7 @@
 "use client";
 
+import { SellerStepFour, SellerStepOne, SellerStepThree, SellerStepTwo } from "@/features/auth";
 import { useSignUpSeller } from "@/features/auth/api/useSignUpSeller";
-import SellerStepFour from "@/features/auth/ui/SellerStepFour";
-import SellerStepOne from "@/features/auth/ui/SellerStepOne";
-import SellerStepThree from "@/features/auth/ui/SellerStepThree";
-import SellerStepTwo from "@/features/auth/ui/SellerStepTwo";
 import { AxiosError } from "axios";
 import { Send, Store } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -111,7 +108,7 @@ const SignUpSellerPage = () => {
             phone: "",
           });
           setCurrentStep(0);
-          router.push('/')
+          // router.push("/"); // Убираем редирект, т.к. продавец еще не аутентифицирован
         },
         onError: (err) => {
           console.log(err);

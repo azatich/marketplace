@@ -9,7 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-const SellerStepTwo = ({
+export const SellerStepTwo = ({
   formData,
   setFormData,
   errors
@@ -82,5 +82,3 @@ const SellerStepTwo = ({
     </form>
   );
 };
-
-export default SellerStepTwo;
