@@ -3,6 +3,7 @@ import { supabase } from "../server.js";
 import bcrypt from "bcryptjs";
 import { SignUpResponse, UserRole } from "../types/index.js";
 import { JWTUtils } from "../utils/jwt.js";
+import { fail } from "assert";
 
 export class AuthController {
   static async signup(req: Request, res: Response) {
@@ -61,6 +62,13 @@ export class AuthController {
       const token = JWTUtils.generate({
         userId: userData.id,
         role: UserRole.CLIENT,
+      });
+
+      res.cookie('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 1000 * 3600 * 24 * 7,
       });
 
       const response: SignUpResponse = {
@@ -138,6 +146,13 @@ export class AuthController {
         return;
       }
 
+      // Не выдаем токен и не устанавливаем cookie для продавца, который еще не одобрен.
+      // Просто сообщаем, что заявка принята.
+      res.status(201).json({
+        success: true,
+        message: "Заявка на регистрацию продавца успешно отправлена. Ожидайте одобрения.",
+      });
+
       const { data: userDataInSellersTable, error: sellerError } =
         await supabase
           .from("sellers")
@@ -163,25 +178,6 @@ export class AuthController {
         return;
       }
 
-      const token = JWTUtils.generate({
-        userId: userDataInUsersTable.id,
-        role: UserRole.SELLER,
-      });
-
-      res.status(201).json({
-        success: true,
-        message: "Продавец успешно зарегистрирован",
-        token,
-        data: {
-          user: {
-            id: userDataInUsersTable.id,
-            email: userDataInUsersTable.email,
-            firstName: sellerFirstName,
-            lastName: sellerLastName,
-          },
-          seller: userDataInSellersTable,
-        },
-      });
     } catch (error) {
       console.error("Signup error:", error);
       res.status(500).json({
@@ -203,7 +199,6 @@ export class AuthController {
         return;
       }
 
-      // Получаем пользователя по email
       const { data: user, error } = await supabase
         .from("users")
         .select("*")
@@ -218,7 +213,6 @@ export class AuthController {
         return;
       }
 
-      // Проверяем пароль
       const isPasswordValid = await bcrypt.compare(userPassword, user.password);
 
       if (!isPasswordValid) {
@@ -229,9 +223,43 @@ export class AuthController {
         return;
       }
 
-      // Убираем пароль из ответа
+      if (user.role === UserRole.SELLER) {
+        const { data: seller, error: sellerError } = await supabase
+          .from("sellers")
+          .select("*")
+          .eq("user_id", user.id)
+          .single();
+
+        if (sellerError || !seller) {
+          res.status(500).json({
+            success: false,
+            message: "Ошибка при проверке статуса продавца",
+          });
+          return;
+        }
+
+        if (seller.approved === false) {
+          res.status(403).json({
+            success: false,
+            message: "Ваша заявка все еще в обработке",
+          });
+          return;
+        }
+      }
+
+      const token = JWTUtils.generate({
+        userId: user.id,
+        role: user.role,
+      });
+
       const { password, ...userWithoutPassword } = user;
 
+      res.cookie('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 1000 * 3600 * 24 * 7,
+      })
       res.status(200).json({
         success: true,
         message: "Успешный вход",
@@ -245,6 +273,24 @@ export class AuthController {
         success: false,
         message: "Внутренняя ошибка сервера",
       });
+    }
+  }
+
+  static async logout(req: Request, res: Response) {
+    try {
+      res.clearCookie('token', {
+        httpOnly: true,
+      })
+
+      return res.status(200).json({
+        success: true,
+        message: 'Успешный выход'
+      })
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: "Внутренняя ошибка сервера",
+      })
     }
   }
 }
