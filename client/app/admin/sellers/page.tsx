@@ -19,7 +19,7 @@ const Sellers = () => {
 
   return (
     <div>
-      <h2 className="text-xl mb-4">Продавцы</h2>
+      <h2 className="text-xl my-4">Продавцы</h2>
       <UsersTable data={sellers} />
     </div>
   );

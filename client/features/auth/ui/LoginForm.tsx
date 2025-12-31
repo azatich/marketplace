@@ -9,7 +9,7 @@ import { toast } from "sonner";
 const roleBasedRoutes = {
   client: "/home",
   seller: "/seller",
-  admin: "/admin",
+  admin: "/admin/clients",
 };
 
 export const LoginForm = () => {

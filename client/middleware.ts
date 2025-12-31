@@ -2,18 +2,17 @@ import { jwtVerify } from "jose";
 import { NextRequest, NextResponse } from "next/server";
 
 const roleBasedRoutes = {
-  client: "/",
+  client: "/home",
   seller: "/seller",
-  admin: "/admin",
+  admin: "/admin/clients",
 };
 
 const publicRoutes = ["/signup", "/signup-seller", "/login"];
 
 const protectedRoutes = {
   "/seller": ["seller"],
-  "/admin": ["admin"],
+  "/admin/clients": ["admin"],
   '/home': ['client'],
-  "/": ["client", "seller", "admin"],
 };
 
 async function verifyToken(token: string) {
