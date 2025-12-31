@@ -170,7 +170,7 @@ export const SignUpForm = () => {
           <button
             type="submit"
             disabled={isPending}
-            className="disabled:opacity-50 w-full group relative flex justify-center py-2.5 px-4 border border-transparent text-sm font-medium rounded-xl text-white bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/40 transform hover:scale-[1.01]"
+            className="disabled:opacity-50 w-full group relative flex justify-center py-2.5 px-4 border border-transparent text-sm font-medium rounded-xl text-white bg-linear-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/40 transform hover:scale-[1.01]"
           >
             Создать аккаунт
           </button>
