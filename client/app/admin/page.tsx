@@ -1,7 +1,5 @@
 const AdminPage = () => {
-  return (
-    <div>AdminPage</div>
-  )
-}
+  return <div>Выберите раздел</div>;
+};
 
-export default AdminPage
+export default AdminPage;
