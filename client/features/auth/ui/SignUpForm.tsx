@@ -1,11 +1,11 @@
 "use client";
 
-import { Lock, Mail } from "lucide-react";
+import { Eye, EyeClosed, Lock, Mail } from "lucide-react";
 import { useState } from "react";
 import { AxiosError } from "axios";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { useSignUp } from "../api/useSignUp";
+import { useSignUp } from "../hooks/useSignUp";
 
 export const SignUpForm = () => {
   const [formData, setFormData] = useState({
@@ -14,6 +14,7 @@ export const SignUpForm = () => {
     firstName: "",
     lastName: "",
   });
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   const { mutate, isPending, error } = useSignUp();
 
@@ -136,7 +137,7 @@ export const SignUpForm = () => {
               <Lock width={18} height={18} />
             </span>
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               placeholder="Create a password"
               onChange={(e) =>
                 setFormData({ ...formData, password: e.target.value })
@@ -144,6 +145,16 @@ export const SignUpForm = () => {
               className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 block p-2.5 pl-10 outline-none transition-all"
               required
             />
+             <div
+              className="absolute right-3 top-1/2 -translate-y-1/2"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? (
+                <EyeClosed className="text-indigo-500" />
+              ) : (
+                <Eye className="text-indigo-500" />
+              )}
+            </div>
           </div>
         </div>
 

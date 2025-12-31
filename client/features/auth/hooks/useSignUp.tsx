@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { api } from "./authApi";
+import { api } from "../../../lib/api";
 import { SignupRequest } from "../types";
 
 export const useSignUp = () => {

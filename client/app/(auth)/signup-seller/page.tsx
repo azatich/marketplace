@@ -1,7 +1,7 @@
 "use client";
 
 import { SellerStepFour, SellerStepOne, SellerStepThree, SellerStepTwo } from "@/features/auth";
-import { useSignUpSeller } from "@/features/auth/api/useSignUpSeller";
+import { useSignUpSeller } from "@/features/auth/hooks/useSignUpSeller";
 import { AxiosError } from "axios";
 import { Send, Store } from "lucide-react";
 import { useRouter } from "next/navigation";

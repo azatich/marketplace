@@ -5,7 +5,7 @@ export { SellerStepTwo } from "./ui/SellerStepTwo";
 export { SellerStepThree } from "./ui/SellerStepThree";
 export { SellerStepFour } from "./ui/SellerStepFour";
 
-export { useLogin } from "./api/useLogin";
-export { useLogout } from "./api/useLogout";
-export { useSignUp } from "./api/useSignUp";
-export { useSignUpSeller } from "./api/useSignUpSeller";
+export { useLogin } from "./hooks/useLogin";
+export { useLogout } from "./hooks/useLogout";
+export { useSignUp } from "./hooks/useSignUp";
+export { useSignUpSeller } from "./hooks/useSignUpSeller";

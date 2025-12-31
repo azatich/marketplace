@@ -1,16 +1,23 @@
 "use client";
-import { Lock, Mail } from "lucide-react";
+import { Eye, EyeClosed, Lock, Mail } from "lucide-react";
 import React, { useState } from "react";
-import { useLogin } from "../api/useLogin";
+import { useLogin } from "../hooks/useLogin";
 import { AxiosError } from "axios";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+
+const roleBasedRoutes = {
+  client: "/home",
+  seller: "/seller",
+  admin: "/admin",
+};
 
 export const LoginForm = () => {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   const { mutate, isPending, error } = useLogin();
 
@@ -20,8 +27,13 @@ export const LoginForm = () => {
 
     try {
       mutate(formData, {
-        onSuccess: () => {
-          toast.success("Успешная авторизация!", {
+        onSuccess: (data) => {
+          console.log(data);
+
+          const userRole: "client" | "seller" | "admin" | undefined =
+            data.data.user.role;
+
+          toast.success(data.message || "Успешная авторизация", {
             duration: 4000,
             style: {
               background: "#10b981",
@@ -32,7 +44,11 @@ export const LoginForm = () => {
             },
             className: "toast-success",
           });
-          router.push("/");
+          if (userRole && roleBasedRoutes[userRole]) {
+            router.push(roleBasedRoutes[userRole]);
+          } else {
+            router.push("/");
+          }
         },
         onError: (err) => {
           console.log(err);
@@ -105,7 +121,7 @@ export const LoginForm = () => {
               <Lock width={18} height={18} />
             </span>
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               placeholder="Create a password"
               onChange={(e) =>
                 setFormData({ ...formData, password: e.target.value })
@@ -113,6 +129,16 @@ export const LoginForm = () => {
               className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 block p-2.5 pl-10 outline-none transition-all"
               required
             />
+            <div
+              className="absolute right-3 top-1/2 -translate-y-1/2"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? (
+                <EyeClosed className="text-indigo-500" />
+              ) : (
+                <Eye className="text-indigo-500" />
+              )}
+            </div>
           </div>
         </div>
 
