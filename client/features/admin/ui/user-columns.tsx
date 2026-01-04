@@ -16,15 +16,6 @@ export const userColumns: ColumnDef<User>[] = [
     header: "Email",
   },
   {
-    accessorKey: "role",
-    header: "Роль",
-    cell: ({ getValue }) => (
-      <span className="px-2 py-1 rounded bg-white/10 text-sm">
-        {getValue<string>()}
-      </span>
-    ),
-  },
-  {
     accessorKey: "created_at",
     header: "Создан",
     cell: ({ getValue }) => new Date(getValue<string>()).toLocaleDateString(),

@@ -1,13 +1,14 @@
 "use client";
 
-import { useUsers } from "@/features/admin/hooks/useUsers";
+import { useSellers } from "@/features/admin/hooks/useSellers";
+import { useClients } from "@/features/admin/hooks/useClients";
 import { UsersTable } from "@/features/admin/ui/users-table";
 import { getUsersByRole } from "@/lib/getUsersByRole";
 
 const Sellers = () => {
-  const { data: users = [], isPending, isError } = useUsers();
+  const { data: sellers = [], isPending, isError } = useSellers();
+  console.log(sellers);
   
-  const sellers = getUsersByRole(users, "seller");
 
   if (isPending) {
     return <div>Загрузка...</div>;
