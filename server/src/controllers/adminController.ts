@@ -31,8 +31,7 @@ export class AdminController {
       if (payload.role !== UserRole.ADMIN) {
         res.status(403).json({
           success: false,
-          message:
-            "Доступ запрещен. Только администратор может получить список всех пользователей",
+          message: "Доступ запрещен.",
         });
         return;
       }
@@ -95,5 +94,85 @@ export class AdminController {
 
       return res.status(200).json({ message: "Пользователь успешно удален" });
     } catch (error) {}
+  }
+
+  static async getSellers(req: Request, res: Response) {
+    try {
+      const token = req.cookies.token;
+
+      if (!token) {
+        return res.status(401).json({ message: "Неавторизован" });
+      }
+
+      const payload = JWTUtils.verify(token);
+
+      if (!payload?.role || payload.role !== UserRole.ADMIN) {
+        return res.status(403).json({ message: "Доступ запрещен" });
+      }
+
+      const { data: sellers, error } = await supabase
+        .from("users")
+        .select(
+          `
+        id,
+        email, 
+        first_name,
+        last_name,
+        role,
+        created_at,
+        sellers (
+          storeName,
+          description,
+          phone,
+          category,
+          approved
+        )
+        `
+        )
+        .eq("role", UserRole.SELLER);
+
+      if (error) {
+        return res
+          .status(500)
+          .json({ message: "Ошибка при получении продавцов" });
+      }
+
+      return res.status(200).json({ data: sellers });
+    } catch (error) {
+      console.error("Error in getSellers:", error);
+      return res.status(500).json({ message: "Внутренняя ошибка сервера" });
+    }
+  }
+
+  static async getClients(req: Request, res: Response) {
+    try {
+      const token = req.cookies.token;
+
+      if (!token) {
+        return res.status(401).json({ message: "Неавторизован" });
+      }
+
+      const payload = JWTUtils.verify(token);
+
+      if (!payload?.role || payload.role !== UserRole.ADMIN) {
+        return res.status(403).json({ message: "Доступ запрещен" });
+      }
+
+      const { data: clients, error } = await supabase
+        .from("users")
+        .select("*")
+        .eq("role", UserRole.CLIENT);
+
+      if (error) {
+        return res
+          .status(500)
+          .json({ message: "Ошибка при получении клиентов" });
+      }
+
+      return res.status(200).json({ data: clients });
+    } catch (error) {
+      console.error("Error in getClients:", error);
+    }
+    
   }
 }
