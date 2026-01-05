@@ -1,10 +1,9 @@
-import Logout from '@/shared/ui/Logout'
-import React from 'react'
+import LogoutButton from "@/components/Logout"
 
 const SellerDashboard = () => {
   return (
     <div>SellerDashboard
-      <Logout />
+      <LogoutButton />
     </div>
   )
 }

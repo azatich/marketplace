@@ -5,7 +5,6 @@ import { sellersColumns, User, UsersTable, useSellers } from "@/features/admin";
 
 const Sellers = () => {
   const { data: sellers = [], isPending, isError } = useSellers();
-  console.log(sellers);
 
   if (isPending) {
     return (

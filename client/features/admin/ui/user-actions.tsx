@@ -39,7 +39,7 @@ export function UserActions({ user }: Props) {
       {open &&
         createPortal(
           <div
-            className="absolute w-40 bg-[#1A1F2E] border border-white/10 rounded-lg shadow-xl z-[9999]"
+            className="absolute w-40 bg-[#1A1F2E] border border-white/10 rounded-lg shadow-xl z-9999"
             style={{ top: coords.top, left: coords.left }}
           >
             <button
