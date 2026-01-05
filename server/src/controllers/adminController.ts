@@ -173,6 +173,73 @@ export class AdminController {
     } catch (error) {
       console.error("Error in getClients:", error);
     }
-    
+  }
+
+  static async approveSeller(req: Request, res: Response) {
+    try {
+      const token = req.cookies.token;
+
+      if (!token) {
+        return res.status(401).json({ message: "Неавторизован" });
+      }
+
+      const payload = JWTUtils.verify(token);
+
+      if (!payload?.role || payload.role !== UserRole.ADMIN) {
+        return res.status(403).json({ message: "Доступ запрещен" });
+      }
+
+      const { id } = req.params;
+
+      const { error } = await supabase
+        .from("sellers")
+        .update({ approved: true })
+        .eq("user_id", id);
+
+      if (error) {
+        return res
+          .status(500)
+          .json({ message: "Ошибка при одобрении продавца" });
+      }
+
+      return res.status(200).json({ message: "Продавец успешно одобрен" });
+
+    } catch (error) {
+      res.status(500).json({ message: "Внутренняя ошибка сервера" });
+    }
+  }
+
+  static async rejectSeller(req: Request, res: Response) {
+    try {
+      const token = req.cookies.token;
+
+      if (!token) {
+        return res.status(401).json({ message: "Неавторизован" });
+      }
+
+      const payload = JWTUtils.verify(token);
+
+      if (!payload?.role || payload.role !== UserRole.ADMIN) {
+        return res.status(403).json({ message: "Доступ запрещен" });
+      }
+
+      const { id } = req.params;
+
+      const { error } = await supabase
+        .from("sellers")
+        .update({ approved: false })
+        .eq("user_id", id);
+
+      if (error) {
+        return res
+          .status(500)
+          .json({ message: "Ошибка при отклонении продавца" });
+      }
+
+      return res.status(200).json({ message: "Продавец успешно отклонен" });
+
+    } catch (error) {
+      res.status(500).json({ message: "Внутренняя ошибка сервера" });
+    }
   }
 }
