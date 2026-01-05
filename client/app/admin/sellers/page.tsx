@@ -1,17 +1,18 @@
 "use client";
 
-import { useSellers } from "@/features/admin/hooks/useSellers";
-import { useClients } from "@/features/admin/hooks/useClients";
-import { UsersTable } from "@/features/admin/ui/users-table";
-import { getUsersByRole } from "@/lib/getUsersByRole";
+import { Spinner } from "@/components/ui/spinner";
+import { sellersColumns, User, UsersTable, useSellers } from "@/features/admin";
 
 const Sellers = () => {
   const { data: sellers = [], isPending, isError } = useSellers();
   console.log(sellers);
-  
 
   if (isPending) {
-    return <div>Загрузка...</div>;
+    return (
+      <div className="fixed inset-0 flex justify-center items-center z-50">
+        <Spinner className="size-16" />
+      </div>
+    );
   }
 
   if (isError) {
@@ -21,7 +22,7 @@ const Sellers = () => {
   return (
     <div>
       <h2 className="text-xl my-4">Продавцы</h2>
-      <UsersTable data={sellers} />
+      <UsersTable<User> data={sellers} columns={sellersColumns} />
     </div>
   );
 };
