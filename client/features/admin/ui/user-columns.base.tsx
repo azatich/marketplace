@@ -2,7 +2,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { User } from "@/features/admin/types/index";
 import { UserActions } from "./user-actions";
 
-export const userColumns: ColumnDef<User>[] = [
+export const baseUserColumns: ColumnDef<User>[] = [
   {
     accessorKey: "first_name",
     header: "Имя",

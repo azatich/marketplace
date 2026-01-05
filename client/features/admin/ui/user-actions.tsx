@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { MoreHorizontal, Pencil, Trash } from "lucide-react";
 import { User } from "@/features/admin/types/index";
 import { createPortal } from "react-dom";
+import { useDeleteUser } from "../hooks/useDeleteUser";
 
 type Props = {
   user: User;
@@ -13,6 +14,7 @@ export function UserActions({ user }: Props) {
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
   const [coords, setCoords] = useState({ top: 0, left: 0 });
+  const deleteUser = useDeleteUser();
 
   useEffect(() => {
     if (open && buttonRef.current) {
@@ -50,7 +52,7 @@ export function UserActions({ user }: Props) {
 
             <button
               className="flex w-full items-center gap-2 px-4 py-2 text-red-400 hover:bg-red-500/10"
-              onClick={() => console.log("DELETE", user.id)}
+              onClick={() => deleteUser.mutate(user.id)}
             >
               <Trash size={14} />
               Удалить

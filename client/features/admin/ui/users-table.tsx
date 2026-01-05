@@ -1,22 +1,22 @@
 "use client";
 
 import {
+  ColumnDef,
   flexRender,
   getCoreRowModel,
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { User } from "@/features/admin/types/index";
-import { userColumns } from "./user-columns";
 
-type Props = {
-  data: User[];
+type Props<T> = {
+  data: T[];
+  columns: ColumnDef<T>[];
 };
 
-export function UsersTable({ data }: Props) {
+export function UsersTable<T>({ data, columns }: Props<T>) {
   const table = useReactTable({
     data,
-    columns: userColumns,
+    columns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
   });
@@ -28,10 +28,7 @@ export function UsersTable({ data }: Props) {
           {table.getHeaderGroups().map((headerGroup) => (
             <tr key={headerGroup.id}>
               {headerGroup.headers.map((header) => (
-                <th
-                  key={header.id}
-                  className="px-4 py-3 text-left font-medium"
-                >
+                <th key={header.id} className="px-4 py-3 text-left font-medium">
                   {flexRender(
                     header.column.columnDef.header,
                     header.getContext()
@@ -50,10 +47,7 @@ export function UsersTable({ data }: Props) {
             >
               {row.getVisibleCells().map((cell) => (
                 <td key={cell.id} className="px-4 py-3">
-                  {flexRender(
-                    cell.column.columnDef.cell,
-                    cell.getContext()
-                  )}
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
                 </td>
               ))}
             </tr>

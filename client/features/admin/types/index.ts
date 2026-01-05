@@ -7,4 +7,11 @@ export type User = {
   last_name: string;
   role: UserRole;
   created_at: string;
+  sellers?: {
+    storeName: string;
+    approved: boolean;
+    description: string;
+    phone: string;
+    category: string;
+  }
 };
