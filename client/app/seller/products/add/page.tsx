@@ -254,10 +254,10 @@ const ProductAdd = () => {
               checked={productForm.visibility}
               onChange={(e) => setProductForm(prev => ({ ...prev, visibility: e.target.checked }))}
             />
-            <div className="w-14 h-7 bg-white/10 rounded-full peer-checked:bg-gradient-to-r peer-checked:from-[#8B7FFF] peer-checked:to-[#6DD5ED] transition-all">
+            <div className="w-14 h-7 bg-white/10 rounded-full peer-checked:bg-linear-to-r peer-checked:from-[#8B7FFF] peer-checked:to-[#6DD5ED] transition-all">
               <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform translate-y-1 ${productForm.visibility ? 'translate-x-8' : 'translate-x-1'}`}></div>
             </div>
-            <span className="ml-3 text-sm text-white">{productForm.visibility ? 'Опубликован' : 'Скрыт'}</span>
+            <span className="ml-3 text-sm text-white w-20">{productForm.visibility ? 'Опубликован' : 'Скрыт'}</span>
           </label>
         </div>
 
