@@ -18,11 +18,7 @@ export default function AdminLayout({
   return (
     <div className="min-h-screen bg-[#0F1419] text-white p-6">
       <div>
-        <div>
-          <div className="flex justify-between mb-4">
-            <h1 className="text-2xl uppercase">Админ панель</h1>
-            <LogoutButton />
-          </div>
+        <div className="flex items-center justify-between">
           <div className="bg-[#1A1F2E]/60 backdrop-blur-xl rounded-[12px] border border-white/5 p-2 inline-flex gap-2">
             <Link
               href="/admin/clients"
@@ -46,6 +42,9 @@ export default function AdminLayout({
               <Store />
               Продавцы
             </Link>
+          </div>
+          <div>
+            <LogoutButton />
           </div>
         </div>
         {children}
