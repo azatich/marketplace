@@ -156,3 +156,15 @@ export const ProductCategories = {
     }
   }
 };
+
+export interface AddProductRequest {
+  title: string;
+  description?: string;
+  category: string;
+  subcategory: string;
+  quantity: number;
+  price: number;
+  discountedPrice?: number;
+  images: string[];
+  visibility?: boolean;
+}

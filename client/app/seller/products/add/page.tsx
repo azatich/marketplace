@@ -3,10 +3,20 @@
 import { ArrowLeft, Upload, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { createClient } from "@supabase/supabase-js";
 import { ProductCategories } from "@/features/seller";
+import { useAddProduct } from "@/features/seller/hooks/useAddProduct";
+import { AxiosError } from "axios";
+
+// Создаём Supabase клиент на клиенте
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 const ProductAdd = () => {
   const router = useRouter();
+  const { mutate: addProduct } = useAddProduct();
   const [productForm, setProductForm] = useState({
     name: "",
     category: "",
@@ -15,45 +25,139 @@ const ProductAdd = () => {
     price: 0,
     discountedPrice: 0,
     description: "",
-    images: [] as string[],
     visibility: true,
   });
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    const imageUrls = files.map(file => URL.createObjectURL(file));
-    setProductForm(prev => ({
-      ...prev,
-      images: [...prev.images, ...imageUrls]
-    }));
+    if (files.length === 0) return;
+
+    setIsUploading(true);
+
+    try {
+      const uploadPromises = files.map(async (file) => {
+        const fileExt = file.name.split(".").pop();
+        const fileName = `${Date.now()}-${Math.random()
+          .toString(36)
+          .substring(7)}.${fileExt}`;
+        const filePath = `products/${fileName}`;
+
+        // Загружаем напрямую в Supabase Storage
+        const { data, error } = await supabase.storage
+          .from("product-images")
+          .upload(filePath, file, {
+            cacheControl: "3600",
+            upsert: false,
+            contentType: file.type,
+          });
+
+        if (error) {
+          console.error("Ошибка загрузки:", error);
+          throw error;
+        }
+
+        // Получаем публичный URL
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from("product-images").getPublicUrl(data.path);
+
+        return publicUrl;
+      });
+
+      const urls = await Promise.all(uploadPromises);
+      setUploadedImages((prev) => [...prev, ...urls]);
+    } catch (error) {
+      console.error("Ошибка при загрузке изображений:", error);
+      alert(
+        `Ошибка при загрузке: ${
+          error instanceof Error ? error.message : "Неизвестная ошибка"
+        }`
+      );
+    } finally {
+      setIsUploading(false);
+    }
   };
 
-  const removeImage = (index: number) => {
-    setProductForm(prev => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index)
-    }));
+  const removeImage = async (index: number) => {
+    const imageUrl = uploadedImages[index];
+
+    try {
+      // Извлекаем путь к файлу из URL
+      const filePath = imageUrl.split("/product-images/")[1];
+
+      // Удаляем из Supabase Storage
+      const { error } = await supabase.storage
+        .from("product-images")
+        .remove([filePath]);
+
+      if (error) {
+        console.error("Ошибка удаления:", error);
+      }
+    } catch (error) {
+      console.error("Ошибка при удалении изображения:", error);
+    }
+
+    // Удаляем из state
+    setUploadedImages((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setProductForm(prev => ({
+    setProductForm((prev) => ({
       ...prev,
       category: e.target.value,
-      subcategory: ""
+      subcategory: "",
     }));
   };
 
   const calculateDiscount = () => {
-    if (productForm.price > 0 && productForm.discountedPrice > 0 && productForm.discountedPrice < productForm.price) {
-      return Math.round(((productForm.price - productForm.discountedPrice) / productForm.price) * 100);
+    if (
+      productForm.price > 0 &&
+      productForm.discountedPrice > 0 &&
+      productForm.discountedPrice < productForm.price
+    ) {
+      return Math.round(
+        ((productForm.price - productForm.discountedPrice) /
+          productForm.price) *
+          100
+      );
     }
     return 0;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Product data:", productForm);
-    // Здесь будет логика отправки данных
+
+    addProduct(
+      {
+        title: productForm.name,
+        description: productForm.description,
+        category: productForm.category,
+        subcategory: productForm.subcategory,
+        quantity: productForm.quantity,
+        price: productForm.price,
+        discountedPrice: productForm.discountedPrice,
+        images: uploadedImages,
+        visibility: productForm.visibility,
+      },
+      {
+        onSuccess: () => {
+          alert("Продукт успешно добавлен!");
+          router.push("/seller/products");
+        },
+        onError: (error: unknown) => {
+          console.error("Error submitting product:", error);
+          const errorMessage =
+            error instanceof AxiosError
+              ? error.response?.data?.message || "Ошибка при добавлении продукта"
+              : error instanceof Error
+              ? error.message
+              : "Ошибка при добавлении продукта";
+          alert(errorMessage);
+        },
+      }
+    );
   };
 
   const handleCancel = () => {
@@ -85,7 +189,9 @@ const ProductAdd = () => {
             <label className="flex flex-col items-center justify-center h-48 border-2 border-dashed border-white/10 rounded-lg hover:border-[#8B7FFF]/50 transition-colors cursor-pointer group">
               <Upload className="text-[#A0AEC0] group-hover:text-[#8B7FFF] transition-colors" />
               <p className="text-sm text-[#A0AEC0] mb-1 mt-2">
-                Перетащите изображения сюда
+                {isUploading
+                  ? "Загрузка в Supabase..."
+                  : "Перетащите изображения сюда"}
               </p>
               <p className="text-xs text-[#A0AEC0]">или нажмите для выбора</p>
               <input
@@ -94,15 +200,16 @@ const ProductAdd = () => {
                 accept="image/*"
                 className="hidden"
                 onChange={handleImageUpload}
+                disabled={isUploading}
               />
             </label>
 
-            {productForm.images.length > 0 && (
+            {uploadedImages.length > 0 && (
               <div className="grid grid-cols-4 gap-4">
-                {productForm.images.map((image, index) => (
+                {uploadedImages.map((imageUrl, index) => (
                   <div key={index} className="relative group">
-                    <img 
-                      src={image} 
+                    <img
+                      src={imageUrl}
                       alt={`Product ${index + 1}`}
                       className="w-full h-32 object-cover rounded-lg border border-white/10"
                     />
@@ -122,7 +229,7 @@ const ProductAdd = () => {
 
         <div className="space-y-6">
           <h3 className="text-lg text-white">Основная информация</h3>
-          
+
           <div>
             <label className="block text-sm text-[#A0AEC0] mb-2">
               Название продукта
@@ -131,7 +238,9 @@ const ProductAdd = () => {
               type="text"
               placeholder="Введите название продукта"
               value={productForm.name}
-              onChange={(e) => setProductForm(prev => ({ ...prev, name: e.target.value }))}
+              onChange={(e) =>
+                setProductForm((prev) => ({ ...prev, name: e.target.value }))
+              }
               className="w-full h-14 px-4 bg-white/5 border border-white/10 rounded-lg text-lg text-white placeholder:text-[#A0AEC0] focus:outline-none focus:ring-2 focus:ring-[#8B7FFF]/50 focus:border-[#8B7FFF]/50 transition-all"
             />
           </div>
@@ -141,14 +250,16 @@ const ProductAdd = () => {
               <label className="block text-sm text-[#A0AEC0] mb-2">
                 Категория
               </label>
-              <select 
+              <select
                 value={productForm.category}
                 onChange={handleCategoryChange}
                 className="w-full h-11 px-4 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#8B7FFF]/50 focus:border-[#8B7FFF]/50 transition-all"
               >
-                <option className="bg-[#1A1F2E]/80" value="">Выберите категорию</option>
+                <option className="bg-[#1A1F2E]" value="">Выберите категорию</option>
                 {Object.entries(ProductCategories).map(([key, value]) => (
-                  <option className="bg-[#1A1F2E]/80" key={key} value={key}>{value.title}</option>
+                  <option className="bg-[#1A1F2E]" key={key} value={key}>
+                    {value.title}
+                  </option>
                 ))}
               </select>
             </div>
@@ -157,16 +268,28 @@ const ProductAdd = () => {
               <label className="block text-sm text-[#A0AEC0] mb-2">
                 Подкатегория
               </label>
-              <select 
+              <select
                 value={productForm.subcategory}
-                onChange={(e) => setProductForm(prev => ({ ...prev, subcategory: e.target.value }))}
+                onChange={(e) =>
+                  setProductForm((prev) => ({
+                    ...prev,
+                    subcategory: e.target.value,
+                  }))
+                }
                 disabled={!productForm.category}
                 className="w-full h-11 px-4 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#8B7FFF]/50 focus:border-[#8B7FFF]/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <option className="bg-[#1A1F2E]/80" value="">Выберите подкатегорию</option>
-                {productForm.category && Object.entries(ProductCategories[productForm.category as keyof typeof ProductCategories].children).map(([key, value]) => (
-                  <option className="bg-[#1A1F2E]/80" key={key} value={key}>{value}</option>
-                ))}
+                <option className="bg-[#1A1F2E]" value="">Выберите подкатегорию</option>
+                {productForm.category &&
+                  Object.entries(
+                    ProductCategories[
+                      productForm.category as keyof typeof ProductCategories
+                    ].children
+                  ).map(([key, value]) => (
+                    <option className="bg-[#1A1F2E]" key={key} value={key}>
+                      {value}
+                    </option>
+                  ))}
               </select>
             </div>
           </div>
@@ -179,7 +302,12 @@ const ProductAdd = () => {
               type="number"
               placeholder="0"
               value={productForm.quantity}
-              onChange={(e) => setProductForm(prev => ({ ...prev, quantity: parseInt(e.target.value) || 0 }))}
+              onChange={(e) =>
+                setProductForm((prev) => ({
+                  ...prev,
+                  quantity: parseInt(e.target.value) || 0,
+                }))
+              }
               className="w-full h-11 px-4 bg-white/5 border border-white/10 rounded-lg text-sm text-white tabular-nums placeholder:text-[#A0AEC0] focus:outline-none focus:ring-2 focus:ring-[#8B7FFF]/50 focus:border-[#8B7FFF]/50 transition-all"
             />
           </div>
@@ -187,18 +315,23 @@ const ProductAdd = () => {
           <div className="grid grid-cols-2 gap-6">
             <div>
               <label className="block text-sm text-[#A0AEC0] mb-2">
-                Цена (тенге)
+                Цена (USD)
               </label>
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#A0AEC0]">
-                  ₸
+                  $
                 </span>
                 <input
                   type="number"
                   step="0.01"
                   placeholder="0.00"
-                  value={productForm.price || ''}
-                  onChange={(e) => setProductForm(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
+                  value={productForm.price || ""}
+                  onChange={(e) =>
+                    setProductForm((prev) => ({
+                      ...prev,
+                      price: parseFloat(e.target.value) || 0,
+                    }))
+                  }
                   className="w-full h-11 pl-8 pr-4 bg-white/5 border border-white/10 rounded-lg text-sm text-white tabular-nums placeholder:text-[#A0AEC0] focus:outline-none focus:ring-2 focus:ring-[#8B7FFF]/50 focus:border-[#8B7FFF]/50 transition-all"
                 />
               </div>
@@ -206,18 +339,23 @@ const ProductAdd = () => {
 
             <div>
               <label className="block text-sm text-[#A0AEC0] mb-2">
-                Цена со скидкой (необязательно)
+                Цена со скидкой (USD)
               </label>
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#A0AEC0]">
-                  ₸
+                  $
                 </span>
                 <input
                   type="number"
                   step="0.01"
                   placeholder="0.00"
-                  value={productForm.discountedPrice || ''}
-                  onChange={(e) => setProductForm(prev => ({ ...prev, discountedPrice: parseFloat(e.target.value) || 0 }))}
+                  value={productForm.discountedPrice || ""}
+                  onChange={(e) =>
+                    setProductForm((prev) => ({
+                      ...prev,
+                      discountedPrice: parseFloat(e.target.value) || 0,
+                    }))
+                  }
                   className="w-full h-11 pl-8 pr-4 bg-white/5 border border-white/10 rounded-lg text-sm text-white tabular-nums placeholder:text-[#A0AEC0] focus:outline-none focus:ring-2 focus:ring-[#8B7FFF]/50 focus:border-[#8B7FFF]/50 transition-all"
                 />
                 {discount > 0 && (
@@ -236,28 +374,48 @@ const ProductAdd = () => {
             rows={6}
             placeholder="Опишите ваш продукт... (Поддерживается Markdown)"
             value={productForm.description}
-            onChange={(e) => setProductForm(prev => ({ ...prev, description: e.target.value }))}
+            onChange={(e) =>
+              setProductForm((prev) => ({
+                ...prev,
+                description: e.target.value,
+              }))
+            }
             className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder:text-[#A0AEC0] focus:outline-none focus:ring-2 focus:ring-[#8B7FFF]/50 focus:border-[#8B7FFF]/50 transition-all resize-none"
           />
-          <p className="text-xs text-[#A0AEC0] mt-2">{productForm.description.length} / 1000 символов</p>
+          <p className="text-xs text-[#A0AEC0] mt-2">
+            {productForm.description.length} / 1000 символов
+          </p>
         </div>
 
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-lg mb-1 text-white">Видимость</h3>
-            <p className="text-sm text-[#A0AEC0]">Управление видимостью продукта на маркетплейсе</p>
+            <p className="text-sm text-[#A0AEC0]">
+              Управление видимостью продукта на маркетплейсе
+            </p>
           </div>
           <label className="relative inline-flex items-center cursor-pointer">
-            <input 
-              type="checkbox" 
-              className="sr-only peer" 
+            <input
+              type="checkbox"
+              className="sr-only peer"
               checked={productForm.visibility}
-              onChange={(e) => setProductForm(prev => ({ ...prev, visibility: e.target.checked }))}
+              onChange={(e) =>
+                setProductForm((prev) => ({
+                  ...prev,
+                  visibility: e.target.checked,
+                }))
+              }
             />
-            <div className="w-14 h-7 bg-white/10 rounded-full peer-checked:bg-linear-to-r peer-checked:from-[#8B7FFF] peer-checked:to-[#6DD5ED] transition-all">
-              <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform translate-y-1 ${productForm.visibility ? 'translate-x-8' : 'translate-x-1'}`}></div>
+            <div className="w-14 h-7 bg-white/10 rounded-full peer-checked:bg-gradient-to-r peer-checked:from-[#8B7FFF] peer-checked:to-[#6DD5ED] transition-all">
+              <div
+                className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform translate-y-1 ${
+                  productForm.visibility ? "translate-x-8" : "translate-x-1"
+                }`}
+              ></div>
             </div>
-            <span className="ml-3 text-sm text-white w-20">{productForm.visibility ? 'Опубликован' : 'Скрыт'}</span>
+            <span className="ml-3 text-sm text-white">
+              {productForm.visibility ? "Опубликован" : "Скрыт"}
+            </span>
           </label>
         </div>
 

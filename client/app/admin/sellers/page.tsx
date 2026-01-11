@@ -5,8 +5,6 @@ import { sellersColumns, User, UsersTable, useSellers } from "@/features/admin";
 
 const Sellers = () => {
   const { data: sellers = [], isPending, isError } = useSellers();
-  console.log(sellers);
-
   if (isPending) {
     return (
       <div className="fixed inset-0 flex justify-center items-center z-50">
