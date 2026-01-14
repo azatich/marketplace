@@ -241,7 +241,7 @@ export class SellerController {
   static async deleteProduct(req: Request, res: Response) {
     try {
       const token = req.cookies.token;
-      const { productId } = req.params;
+      const { id: productId } = req.params;
 
       if (!token) {
         return res.status(401).json({ message: "Неавторизован" });
