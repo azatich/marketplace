@@ -80,7 +80,7 @@ export function Header() {
                     >
                       <p className="text-sm">{notification.text}</p>
                       <p className="text-xs text-[#A0AEC0] mt-1">
-                        {notification.time}
+                        {notification.time}j
                       </p>
                     </div>
                   ))}
@@ -111,10 +111,10 @@ export function Header() {
               >
                 <div className="p-2">
                   <button className="w-full px-4 py-2 text-left text-sm hover:bg-white/5 rounded-lg transition-colors">
-                    Profile
+                    Профиль
                   </button>
                   <button className="w-full px-4 py-2 text-left text-sm hover:bg-white/5 rounded-lg transition-colors">
-                    Settings
+                    Настройки
                   </button>
                   <div className="border-t border-white/10 my-2" />
                   <button
@@ -122,7 +122,7 @@ export function Header() {
                     onClick={() => logout.mutate()}
                     className="w-full px-4 py-2 text-left text-sm text-[#FF6B6B] hover:bg-white/5 rounded-lg transition-colors"
                   >
-                    Logout
+                    Выйти из системы
                   </button>
                 </div>
               </motion.div>

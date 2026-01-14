@@ -5,6 +5,7 @@ import { useLogin } from "../hooks/useLogin";
 import { AxiosError } from "axios";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
 const roleBasedRoutes = {
   client: "/home",
@@ -33,17 +34,7 @@ export const LoginForm = () => {
           const userRole: "client" | "seller" | "admin" | undefined =
             data.data.user.role;
 
-          toast.success(data.message || "Успешная авторизация", {
-            duration: 4000,
-            style: {
-              background: "#10b981",
-              color: "#ffffff",
-              border: "1px solid #059669",
-              borderRadius: "8px",
-              padding: "16px",
-            },
-            className: "toast-success",
-          });
+          showSuccessToast(data.message || "Успешный вход в систему");
           if (userRole && roleBasedRoutes[userRole]) {
             router.push(roleBasedRoutes[userRole]);
           } else {
@@ -58,23 +49,7 @@ export const LoginForm = () => {
               ? err.response?.data?.message || "Произошла ошибка на сервере"
               : "Произошла непредвиденная ошибка. Попробуйте позже";
 
-          toast.error("Ошибка при регистрации!", {
-            description: errorMessage,
-            duration: 3000,
-            closeButton: true,
-            style: {
-              background: "linear-gradient(135deg, #dc2626 0%, #991b1b 100%)",
-              color: "#ffffff",
-              border: "1px solid rgba(220, 38, 38, 0.3)",
-              borderRadius: "12px",
-              padding: "16px 20px",
-              boxShadow:
-                "0 10px 40px rgba(220, 38, 38, 0.3), 0 0 0 1px rgba(220, 38, 38, 0.1)",
-              backdropFilter: "blur(10px)",
-            },
-            className: "toast-error",
-            icon: " ",
-          });
+          showErrorToast("Ошибка при входе", errorMessage);
         },
       });
     } catch (error) {
@@ -122,7 +97,7 @@ export const LoginForm = () => {
             </span>
             <input
               type={showPassword ? "text" : "password"}
-              placeholder="Create a password"
+              placeholder="Создайте надежный пароль"
               onChange={(e) =>
                 setFormData({ ...formData, password: e.target.value })
               }

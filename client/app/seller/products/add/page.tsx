@@ -2,11 +2,12 @@
 
 import { ArrowLeft, Upload, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { ProductCategories } from "@/features/seller";
 import { useAddProduct } from "@/features/seller/hooks/useAddProduct";
 import { AxiosError } from "axios";
+import ConfirmationPopUp from "@/components/ConfirmationPopUp";
 
 // Создаём Supabase клиент на клиенте
 const supabase = createClient(
@@ -16,7 +17,7 @@ const supabase = createClient(
 
 const ProductAdd = () => {
   const router = useRouter();
-  const { mutate: addProduct } = useAddProduct();
+  const { mutate: addProduct, isPending: isAddingProduct } = useAddProduct();
   const [productForm, setProductForm] = useState({
     name: "",
     category: "",
@@ -29,6 +30,9 @@ const ProductAdd = () => {
   });
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const isSubmittingRef = useRef(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmLoading, setConfirmLoading] = useState(false);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -44,7 +48,6 @@ const ProductAdd = () => {
           .substring(7)}.${fileExt}`;
         const filePath = `products/${fileName}`;
 
-        // Загружаем напрямую в Supabase Storage
         const { data, error } = await supabase.storage
           .from("product-images")
           .upload(filePath, file, {
@@ -58,7 +61,6 @@ const ProductAdd = () => {
           throw error;
         }
 
-        // Получаем публичный URL
         const {
           data: { publicUrl },
         } = supabase.storage.from("product-images").getPublicUrl(data.path);
@@ -103,6 +105,23 @@ const ProductAdd = () => {
     setUploadedImages((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const deleteAllUploadedImages = async () => {
+    if (uploadedImages.length === 0) return;
+
+    for (const imageUrl of uploadedImages) {
+      try {
+        const filePath = imageUrl.split("/product-images/")[1];
+        if (filePath) {
+          await supabase.storage.from("product-images").remove([filePath]);
+        }
+      } catch (error) {
+        console.log("Ошибка удаления фото ");
+      }
+    }
+
+    setUploadedImages([]);
+  };
+
   const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setProductForm((prev) => ({
       ...prev,
@@ -129,42 +148,54 @@ const ProductAdd = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    addProduct(
-      {
-        title: productForm.name,
-        description: productForm.description,
-        category: productForm.category,
-        subcategory: productForm.subcategory,
-        quantity: productForm.quantity,
-        price: productForm.price,
-        discountedPrice: productForm.discountedPrice,
-        images: uploadedImages,
-        visibility: productForm.visibility,
-      },
-      {
-        onSuccess: () => {
-          alert("Продукт успешно добавлен!");
-          router.push("/seller/products");
-        },
-        onError: (error: unknown) => {
-          console.error("Error submitting product:", error);
-          const errorMessage =
-            error instanceof AxiosError
-              ? error.response?.data?.message || "Ошибка при добавлении продукта"
-              : error instanceof Error
-              ? error.message
-              : "Ошибка при добавлении продукта";
-          alert(errorMessage);
-        },
-      }
-    );
+    isSubmittingRef.current = true;
+
+    addProduct({
+      title: productForm.name,
+      description: productForm.description,
+      category: productForm.category,
+      subcategory: productForm.subcategory,
+      quantity: productForm.quantity,
+      price: productForm.price,
+      discountedPrice: productForm.discountedPrice,
+      images: uploadedImages,
+      visibility: productForm.visibility,
+    });
   };
 
-  const handleCancel = () => {
+  const handleCancel = async () => {
+    if (uploadedImages.length > 0) {
+      setConfirmOpen(true);
+      return;
+    }
     router.back();
   };
 
+  const handleConfirmCancel = async () => {
+    try {
+      setConfirmLoading(true);
+      await deleteAllUploadedImages();
+      router.back();
+    } catch (error) {
+      setConfirmLoading(false);
+      console.log("Ошибка при удалении фото", error);
+    } finally {
+      setConfirmLoading(false);
+    }
+  };
+
   const discount = calculateDiscount();
+
+  useEffect(() => {
+    const cleanUpImage = async () => {
+      if (!isSubmittingRef.current && uploadedImages.length > 0) {
+        await deleteAllUploadedImages();
+      }
+    };
+    return () => {
+      cleanUpImage();
+    };
+  }, []);
 
   return (
     <div>
@@ -189,9 +220,7 @@ const ProductAdd = () => {
             <label className="flex flex-col items-center justify-center h-48 border-2 border-dashed border-white/10 rounded-lg hover:border-[#8B7FFF]/50 transition-colors cursor-pointer group">
               <Upload className="text-[#A0AEC0] group-hover:text-[#8B7FFF] transition-colors" />
               <p className="text-sm text-[#A0AEC0] mb-1 mt-2">
-                {isUploading
-                  ? "Загрузка в Supabase..."
-                  : "Перетащите изображения сюда"}
+                {isUploading ? "Загрузка..." : "Перетащите изображения сюда"}
               </p>
               <p className="text-xs text-[#A0AEC0]">или нажмите для выбора</p>
               <input
@@ -255,7 +284,9 @@ const ProductAdd = () => {
                 onChange={handleCategoryChange}
                 className="w-full h-11 px-4 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#8B7FFF]/50 focus:border-[#8B7FFF]/50 transition-all"
               >
-                <option className="bg-[#1A1F2E]" value="">Выберите категорию</option>
+                <option className="bg-[#1A1F2E]" value="">
+                  Выберите категорию
+                </option>
                 {Object.entries(ProductCategories).map(([key, value]) => (
                   <option className="bg-[#1A1F2E]" key={key} value={key}>
                     {value.title}
@@ -279,7 +310,9 @@ const ProductAdd = () => {
                 disabled={!productForm.category}
                 className="w-full h-11 px-4 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#8B7FFF]/50 focus:border-[#8B7FFF]/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <option className="bg-[#1A1F2E]" value="">Выберите подкатегорию</option>
+                <option className="bg-[#1A1F2E]" value="">
+                  Выберите подкатегорию
+                </option>
                 {productForm.category &&
                   Object.entries(
                     ProductCategories[
@@ -427,12 +460,22 @@ const ProductAdd = () => {
           >
             Отмена
           </button>
+          <ConfirmationPopUp
+            open={confirmOpen}
+            title="Отменить создание товара?"
+            message={`У вас ${uploadedImages.length} загруженных изображений. Они будут удалены. Продолжить?`}
+            confirmText="Да, удалить изображения"
+            cancelText="Отмена"
+            isLoading={confirmLoading}
+            onCancel={() => setConfirmOpen(false)}
+            onConfirm={handleConfirmCancel}
+          />
           <button
             type="button"
             onClick={handleSubmit}
             className="flex-1 h-12 px-6 bg-gradient-to-r from-[#8B7FFF] to-[#6DD5ED] rounded-lg text-white font-semibold hover:shadow-lg hover:shadow-[#8B7FFF]/50 transition-all"
           >
-            Добавить продукт
+            {isAddingProduct ? "Добавление..." : "Добавить"}
           </button>
         </div>
       </div>
