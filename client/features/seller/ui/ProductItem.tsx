@@ -3,10 +3,12 @@ import type { ProductItem } from "../types";
 import { motion, AnimatePresence } from "framer-motion";
 import { Edit, Eye, EyeOff, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import { useToggleVisibility } from "../hooks/useToggleVisibility";
+import { useDeleteMutation } from "../hooks/useDeleteMutation";
 
 const ProductItem = ({ product }: { product: ProductItem }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const {mutate: toggleVisibility, isPending: isPendingToggleVisibility} = useToggleVisibility()
+  const {mutate: deleteProduct, isPending: isDeletingProduct} = useDeleteMutation()
 
   const nextImage = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -145,6 +147,8 @@ const ProductItem = ({ product }: { product: ProductItem }) => {
             whileTap={{ scale: 0.9 }}
             className="flex items-center justify-center w-10 h-10 bg-[#FF6B6B]/20 text-[#FF6B6B] hover:bg-[#FF6B6B]/30 rounded-full transition-colors"
             title="Удалить"
+            onClick={() => deleteProduct(product.id)}
+            disabled={isDeletingProduct}
           >
             <Trash2 className="w-4 h-4" />
           </motion.button>
