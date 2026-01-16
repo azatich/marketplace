@@ -161,6 +161,8 @@ const ProductAdd = () => {
       images: uploadedImages,
       visibility: productForm.visibility,
     });
+
+    router.push("/seller/products");
   };
 
   const handleCancel = async () => {
@@ -439,7 +441,7 @@ const ProductAdd = () => {
                 }))
               }
             />
-            <div className="w-14 h-7 bg-white/10 rounded-full peer-checked:bg-gradient-to-r peer-checked:from-[#8B7FFF] peer-checked:to-[#6DD5ED] transition-all">
+            <div className="w-14 h-7 bg-white/10 rounded-full peer-checked:bg-linear-to-r peer-checked:from-[#8B7FFF] peer-checked:to-[#6DD5ED] transition-all">
               <div
                 className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform translate-y-1 ${
                   productForm.visibility ? "translate-x-8" : "translate-x-1"
@@ -473,7 +475,7 @@ const ProductAdd = () => {
           <button
             type="button"
             onClick={handleSubmit}
-            className="flex-1 h-12 px-6 bg-gradient-to-r from-[#8B7FFF] to-[#6DD5ED] rounded-lg text-white font-semibold hover:shadow-lg hover:shadow-[#8B7FFF]/50 transition-all"
+            className="flex-1 h-12 px-6 bg-linear-to-r from-[#8B7FFF] to-[#6DD5ED] rounded-lg text-white font-semibold hover:shadow-lg hover:shadow-[#8B7FFF]/50 transition-all"
           >
             {isAddingProduct ? "Добавление..." : "Добавить"}
           </button>
