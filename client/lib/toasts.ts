@@ -3,7 +3,7 @@ import { toast } from "sonner";
 // Функция для показа успешного toast
 export const showSuccessToast = (message: string, description?: string) => {
   return toast.success(message, {
-    description: description || message,
+    description: description,
     duration: 3000,
     closeButton: true,
     style: {

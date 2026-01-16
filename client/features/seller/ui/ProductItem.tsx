@@ -2,9 +2,11 @@ import React, { useState } from "react";
 import type { ProductItem } from "../types";
 import { motion, AnimatePresence } from "framer-motion";
 import { Edit, Eye, EyeOff, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { useToggleVisibility } from "../hooks/useToggleVisibility";
 
 const ProductItem = ({ product }: { product: ProductItem }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const {mutate: toggleVisibility, isPending: isPendingToggleVisibility} = useToggleVisibility()
 
   const nextImage = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -89,7 +91,7 @@ const ProductItem = ({ product }: { product: ProductItem }) => {
       </div>
       
       <div className="p-4">
-        <h3 className="mb-2 line-clamp-2 min-h-[3rem]">{product.title}</h3>
+        <h3 className="mb-2 line-clamp-2 min-h-12">{product.title}</h3>
         <div className="flex items-center justify-between mb-3">
           <div className="flex-col">
             {product.discount_price && product.discount_price > 0 ? (
@@ -112,7 +114,6 @@ const ProductItem = ({ product }: { product: ProductItem }) => {
         </div>
       </div>
 
-      {/* Кнопки на границе (50% внутри, 50% снаружи) */}
       <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 z-10">
         <div className="flex items-center gap-2 px-4 py-2 bg-[#1A1F2E] backdrop-blur-xl border border-white/10 rounded-full shadow-2xl shadow-black/50">
           <motion.button
@@ -129,6 +130,8 @@ const ProductItem = ({ product }: { product: ProductItem }) => {
             whileTap={{ scale: 0.9 }}
             className="flex items-center justify-center w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
             title={product.visibility ? "Скрыть" : "Показать"}
+            onClick={() => toggleVisibility(product.id)}
+            disabled={isPendingToggleVisibility}
           >
             {product.visibility ? (
               <Eye className="w-4 h-4" />
