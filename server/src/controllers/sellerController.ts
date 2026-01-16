@@ -35,7 +35,13 @@ export class SellerController {
       } = req.body;
 
       // Валидация обязательных полей
-      if (!title || !category || !subcategory || !price || quantity === undefined) {
+      if (
+        !title ||
+        !category ||
+        !subcategory ||
+        !price ||
+        quantity === undefined
+      ) {
         return res.status(400).json({
           message: "Не все обязательные поля заполнены",
         });
@@ -111,7 +117,6 @@ export class SellerController {
     }
   }
 
-  // Получить все продукты продавца
   static async getSellerProducts(req: Request, res: Response) {
     try {
       const token = req.cookies.token;
@@ -144,10 +149,7 @@ export class SellerController {
         });
       }
 
-      return res.status(200).json({
-        message: "Продукты успешно получены",
-        products: data,
-      });
+      return res.status(200).json(data);
     } catch (error) {
       console.error("Неожиданная ошибка:", error);
       return res.status(500).json({
@@ -283,7 +285,10 @@ export class SellerController {
       }
 
       // Удаление продукта
-      const { error } = await supabase.from("products").delete().eq("id", productId);
+      const { error } = await supabase
+        .from("products")
+        .delete()
+        .eq("id", productId);
 
       if (error) {
         console.error("Ошибка при удалении продукта:", error);
@@ -300,6 +305,63 @@ export class SellerController {
       console.error("Неожиданная ошибка:", error);
       return res.status(500).json({
         message: "Внутренняя ошибка сервера",
+      });
+    }
+  }
+
+  static async toggleProductVisibility(req: Request, res: Response) {
+    try {
+      const token = req.cookies.token;
+
+      if (!token) {
+        return res.status(401).json({ message: "Неавторизован" });
+      }
+
+      const payload = await JWTUtils.verify(token);
+
+      if (!payload || payload.role !== UserRole.SELLER) {
+        return res.status(403).json({ message: "Доступ запрещен" });
+      }
+
+      const { id } = req.params;
+
+      const { data: existingProduct, error: fetchError } = await supabase
+        .from("products")
+        .select("id, visibility, seller_id")
+        .eq("id", id)
+        .single();
+
+      if (fetchError || !existingProduct) {
+        return res.status(404).json({ message: "Продукт не найден" });
+      }
+
+      if (existingProduct.seller_id !== payload.userId) {
+        return res.status(403).json({ message: "Это не ваш продукт" });
+      }
+
+      const newVisibility = !existingProduct.visibility;
+
+      const { data, error: updateError } = await supabase
+        .from("products")
+        .update({ visibility: newVisibility })
+        .eq("id", id)
+        .select();
+
+      if (updateError) {
+        return res.status(500).json({
+          message: "Ошибка при обновлении продукта",
+          error: updateError.message,
+        });
+      }
+
+      return res.status(200).json({
+        message: `Продукт ${newVisibility ? "показан" : "скрыт"}`,
+        product: data[0],
+      });
+    } catch (error) {
+      return res.status(500).json({
+        message: "Внутренняя ошибка сервера",
+        error: error instanceof Error ? error.message : "Неизвестная ошибка",
       });
     }
   }
