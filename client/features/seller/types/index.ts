@@ -178,9 +178,23 @@ export interface ProductItem {
   subcategory: string;
   quantity: number;
   price: number;
-  discount_price: number;
+  discount_price: number | null;
   images: string[]
   visibility: boolean;
   created_at: string;
   updated_at: string;
 }
+
+export interface UpdatedProductItem {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  subcategory: string;
+  quantity: number;
+  price: number;
+  discount_price: number | null;
+  images: string[]
+  visibility: boolean;
+}
+

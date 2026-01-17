@@ -1,13 +1,13 @@
-import { api } from "@/lib/api"
-import { useQuery } from "@tanstack/react-query"
-import { ProductItem } from "../types"
+import { api } from "@/lib/api";
+import { useQuery } from "@tanstack/react-query";
+import { ProductItem } from "../types";
 
 export const useProductsQuery = () => {
-    return useQuery<ProductItem[]>({
-        queryKey: ['seller-products'],
-        queryFn: async () => {
-            const res = await api.get('/seller/products')
-            return res.data;
-        }
-    })
-}
+  return useQuery<ProductItem[]>({
+    queryKey: ["seller-products"],
+    queryFn: async () => {
+      const res = await api.get("/seller/products");
+      return res.data;
+    },
+  });
+};

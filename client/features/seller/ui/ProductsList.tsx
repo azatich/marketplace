@@ -1,20 +1,27 @@
-'use client'
+"use client";
 
-import { useProductsQuery } from '../hooks/useProductsQuery'
-import ProductItem from './ProductItem';
+import { Spinner } from "@/components/ui/spinner";
+import { useProductsQuery } from "../hooks/useProductsQuery";
+import ProductItem from "./ProductItem";
 
 const ProductsList = () => {
-    const {data: products, isPending} = useProductsQuery();
-    console.log(products);
-    
-  return (
-    <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6'>
-        {isPending && <div>Загрузка...</div>}
-        {products?.map((product) => (
-            <ProductItem key={product.id} product={product} />
-        ))}
-    </div>
-  )
-}
+  const { data: products, isPending } = useProductsQuery();
 
-export default ProductsList
+  if (isPending) {
+    return (
+      <div className="fixed inset-0 flex justify-center items-center z-50">
+        <Spinner className="size-16" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {products?.map((product) => (
+        <ProductItem key={product.id} product={product} />
+      ))}
+    </div>
+  );
+};
+
+export default ProductsList;

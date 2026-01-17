@@ -1,34 +1,70 @@
 "use client";
 
-import { ArrowLeft, Upload, X } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
+import { Spinner } from "@/components/ui/spinner";
+import { useUpdateProduct } from "@/features/seller/hooks/useUpdateProduct";
 import { ProductCategories } from "@/features/seller";
-import { useAddProduct } from "@/features/seller/hooks/useAddProduct";
-import ConfirmationPopUp from "@/components/ConfirmationPopUp";
+import { useSingleProduct } from "@/features/seller/hooks/useSingleProduct";
 import { calculateDiscount } from "@/lib/calculateDiscount";
 import { supabase } from "@/lib/supabaseClient";
+import { ArrowLeft, Upload, X } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { showSuccessToast } from "@/lib/toasts";
 
-
-const ProductAdd = () => {
+const ProductEdit = () => {
+  const params = useParams();
+  const id = Array.isArray(params.id) ? params.id[0] : params.id;
   const router = useRouter();
-  const { mutate: addProduct, isPending: isAddingProduct } = useAddProduct();
+
+  const { data: product, isPending: isLoadingProduct } = useSingleProduct(
+    id as string,
+  );
+  const {
+    mutate: updateProduct,
+    isPending: isUpdating,
+  } = useUpdateProduct({
+    onSuccess: (data) => {
+      isSubmittingRef.current = true;
+      router.push('/seller/products');
+      showSuccessToast(
+        "Продукт обновлён!",
+        data.message || "Изменения успешно сохранены"
+      );
+    }
+  });
+
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const isSubmittingRef = useRef(false);
+
   const [productForm, setProductForm] = useState({
     name: "",
     category: "",
     subcategory: "",
     quantity: 0,
     price: 0,
-    discountedPrice: 0,
+    discount_price: 0,
     description: "",
     visibility: true,
   });
-  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
-  const [isUploading, setIsUploading] = useState(false);
-  const isSubmittingRef = useRef(false);
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [confirmLoading, setConfirmLoading] = useState(false);
+
+  useEffect(() => {
+    if (product) {
+      setProductForm({
+        name: product.title,
+        category: product.category,
+        subcategory: product.subcategory,
+        quantity: product.quantity,
+        price: product.price,
+        discount_price: product.discount_price || 0,
+        description: product.description || "",
+        visibility: product.visibility,
+      });
+
+      // Загружаем существующие изображения
+      setUploadedImages(product.images || []);
+    }
+  }, [product]);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -39,9 +75,7 @@ const ProductAdd = () => {
     try {
       const uploadPromises = files.map(async (file) => {
         const fileExt = file.name.split(".").pop();
-        const fileName = `${Date.now()}-${Math.random()
-          .toString(36)
-          .substring(7)}.${fileExt}`;
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
         const filePath = `products/${fileName}`;
 
         const { data, error } = await supabase.storage
@@ -69,9 +103,7 @@ const ProductAdd = () => {
     } catch (error) {
       console.error("Ошибка при загрузке изображений:", error);
       alert(
-        `Ошибка при загрузке: ${
-          error instanceof Error ? error.message : "Неизвестная ошибка"
-        }`,
+        `Ошибка при загрузке: ${error instanceof Error ? error.message : "Неизвестная ошибка"}`,
       );
     } finally {
       setIsUploading(false);
@@ -82,10 +114,8 @@ const ProductAdd = () => {
     const imageUrl = uploadedImages[index];
 
     try {
-      // Извлекаем путь к файлу из URL
       const filePath = imageUrl.split("/product-images/")[1];
 
-      // Удаляем из Supabase Storage
       const { error } = await supabase.storage
         .from("product-images")
         .remove([filePath]);
@@ -97,25 +127,7 @@ const ProductAdd = () => {
       console.error("Ошибка при удалении изображения:", error);
     }
 
-    // Удаляем из state
     setUploadedImages((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const deleteAllUploadedImages = async () => {
-    if (uploadedImages.length === 0) return;
-
-    for (const imageUrl of uploadedImages) {
-      try {
-        const filePath = imageUrl.split("/product-images/")[1];
-        if (filePath) {
-          await supabase.storage.from("product-images").remove([filePath]);
-        }
-      } catch (error) {
-        console.log("Ошибка удаления фото ");
-      }
-    }
-
-    setUploadedImages([]);
   };
 
   const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -126,62 +138,80 @@ const ProductAdd = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     isSubmittingRef.current = true;
 
-    addProduct({
+    updateProduct({
+      id: id as string,
       title: productForm.name,
       description: productForm.description,
       category: productForm.category,
       subcategory: productForm.subcategory,
       quantity: productForm.quantity,
       price: productForm.price,
-      discountedPrice: productForm.discountedPrice,
+      discount_price: productForm.discount_price || null,
       images: uploadedImages,
       visibility: productForm.visibility,
     });
-
-    router.push("/seller/products");
   };
 
-  const handleCancel = async () => {
-    if (uploadedImages.length > 0) {
-      setConfirmOpen(true);
-      return;
-    }
+  const handleCancel = () => {
     router.back();
   };
 
-  const handleConfirmCancel = async () => {
-    try {
-      setConfirmLoading(true);
-      await deleteAllUploadedImages();
-      router.back();
-    } catch (error) {
-      setConfirmLoading(false);
-      console.log("Ошибка при удалении фото", error);
-    } finally {
-      setConfirmLoading(false);
-    }
-  };
-
   const discount = useMemo(
-    () => calculateDiscount(productForm.price, productForm.discountedPrice),
-    [productForm.price, productForm.discountedPrice],
+    () =>
+      calculateDiscount(productForm.price, productForm.discount_price || null),
+    [productForm.price, productForm.discount_price],
   );
 
+  // Cleanup при размонтировании (только новые загруженные изображения)
   useEffect(() => {
-    const cleanUpImage = async () => {
-      if (!isSubmittingRef.current && uploadedImages.length > 0) {
-        await deleteAllUploadedImages();
+    const newImages = uploadedImages.filter(
+      (img) => !product?.images?.includes(img),
+    );
+
+    return () => {
+      if (!isSubmittingRef.current && newImages.length > 0) {
+        console.log("🧹 Cleanup: удаление новых загруженных изображений");
+
+        newImages.forEach(async (imageUrl) => {
+          try {
+            const filePath = imageUrl.split("/product-images/")[1];
+            if (filePath) {
+              await supabase.storage.from("product-images").remove([filePath]);
+            }
+          } catch (error) {
+            console.error("Ошибка удаления изображения:", error);
+          }
+        });
       }
     };
-    return () => {
-      cleanUpImage();
-    };
   }, []);
+
+  if (isLoadingProduct) {
+    return (
+      <div className="fixed inset-0 flex justify-center items-center z-50">
+        <Spinner className="size-16" />
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <p className="text-xl text-white mb-4">Продукт не найден</p>
+        <button
+          onClick={() => router.back()}
+          className="px-6 py-2 bg-[#8B7FFF] text-white rounded-lg hover:bg-[#8B7FFF]/80 transition-colors"
+        >
+          Вернуться назад
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -194,14 +224,17 @@ const ProductAdd = () => {
           <ArrowLeft />
         </button>
         <div>
-          <h1 className="text-2xl text-white">Добавить новый продукт</h1>
-          <p className="text-[#A0AEC0]">Создайте новый список товаров</p>
+          <h1 className="text-2xl text-white">Редактировать продукт</h1>
+          <p className="text-[#A0AEC0]">{product.title}</p>
         </div>
       </div>
 
       <div className="p-8 rounded-xl bg-[#1A1F2E]/80 backdrop-blur-xl border border-white/5 space-y-8">
+        {/* Изображения */}
         <div>
-          <label className="block mb-3 text-white">Изображения продукта</label>
+          <label className="block mb-3 text-white">
+            Изображения продукта ({uploadedImages.length})
+          </label>
           <div className="space-y-4">
             <label className="flex flex-col items-center justify-center h-48 border-2 border-dashed border-white/10 rounded-lg hover:border-[#8B7FFF]/50 transition-colors cursor-pointer group">
               <Upload className="text-[#A0AEC0] group-hover:text-[#8B7FFF] transition-colors" />
@@ -235,6 +268,12 @@ const ProductAdd = () => {
                     >
                       <X size={16} />
                     </button>
+                    {/* Индикатор оригинального изображения */}
+                    {product.images?.includes(imageUrl) && (
+                      <div className="absolute bottom-2 left-2 px-2 py-1 bg-blue-500/80 text-xs text-white rounded">
+                        Оригинал
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -242,6 +281,7 @@ const ProductAdd = () => {
           </div>
         </div>
 
+        {/* Основная информация */}
         <div className="space-y-6">
           <h3 className="text-lg text-white">Основная информация</h3>
 
@@ -334,12 +374,9 @@ const ProductAdd = () => {
           <div className="grid grid-cols-2 gap-6">
             <div>
               <label className="block text-sm text-[#A0AEC0] mb-2">
-                Цена (USD)
+                Цена (тг)
               </label>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#A0AEC0]">
-                  $
-                </span>
                 <input
                   type="number"
                   step="0.01"
@@ -351,31 +388,28 @@ const ProductAdd = () => {
                       price: parseFloat(e.target.value) || 0,
                     }))
                   }
-                  className="w-full h-11 pl-8 pr-4 bg-white/5 border border-white/10 rounded-lg text-sm text-white tabular-nums placeholder:text-[#A0AEC0] focus:outline-none focus:ring-2 focus:ring-[#8B7FFF]/50 focus:border-[#8B7FFF]/50 transition-all"
+                  className="w-full h-11 px-4 bg-white/5 border border-white/10 rounded-lg text-sm text-white tabular-nums placeholder:text-[#A0AEC0] focus:outline-none focus:ring-2 focus:ring-[#8B7FFF]/50 focus:border-[#8B7FFF]/50 transition-all"
                 />
               </div>
             </div>
 
             <div>
               <label className="block text-sm text-[#A0AEC0] mb-2">
-                Цена со скидкой (USD)
+                Цена со скидкой (тг)
               </label>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#A0AEC0]">
-                  $
-                </span>
                 <input
                   type="number"
                   step="0.01"
                   placeholder="0.00"
-                  value={productForm.discountedPrice || ""}
+                  value={productForm.discount_price || ""}
                   onChange={(e) =>
                     setProductForm((prev) => ({
                       ...prev,
-                      discountedPrice: parseFloat(e.target.value) || 0,
+                      discount_price: parseFloat(e.target.value) || 0,
                     }))
                   }
-                  className="w-full h-11 pl-8 pr-4 bg-white/5 border border-white/10 rounded-lg text-sm text-white tabular-nums placeholder:text-[#A0AEC0] focus:outline-none focus:ring-2 focus:ring-[#8B7FFF]/50 focus:border-[#8B7FFF]/50 transition-all"
+                  className="w-full h-11 px-4 bg-white/5 border border-white/10 rounded-lg text-sm text-white tabular-nums placeholder:text-[#A0AEC0] focus:outline-none focus:ring-2 focus:ring-[#8B7FFF]/50 focus:border-[#8B7FFF]/50 transition-all"
                 />
                 {discount > 0 && (
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-green-400 text-sm font-semibold">
@@ -387,11 +421,12 @@ const ProductAdd = () => {
           </div>
         </div>
 
+        {/* Описание */}
         <div>
           <label className="block text-sm text-[#A0AEC0] mb-2">Описание</label>
           <textarea
             rows={6}
-            placeholder="Опишите ваш продукт... (Поддерживается Markdown)"
+            placeholder="Опишите ваш продукт..."
             value={productForm.description}
             onChange={(e) =>
               setProductForm((prev) => ({
@@ -406,6 +441,7 @@ const ProductAdd = () => {
           </p>
         </div>
 
+        {/* Видимость */}
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-lg mb-1 text-white">Видимость</h3>
@@ -425,12 +461,12 @@ const ProductAdd = () => {
                 }))
               }
             />
-            <div className="w-14 h-7 bg-white/10 rounded-full peer-checked:bg-linear-to-r peer-checked:from-[#8B7FFF] peer-checked:to-[#6DD5ED] transition-all">
+            <div className="w-14 h-7 bg-white/10 rounded-full peer-checked:bg-gradient-to-r peer-checked:from-[#8B7FFF] peer-checked:to-[#6DD5ED] transition-all">
               <div
                 className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform translate-y-1 ${
                   productForm.visibility ? "translate-x-8" : "translate-x-1"
                 }`}
-              ></div>
+              />
             </div>
             <span className="ml-3 text-sm text-white">
               {productForm.visibility ? "Опубликован" : "Скрыт"}
@@ -438,30 +474,23 @@ const ProductAdd = () => {
           </label>
         </div>
 
+        {/* Кнопки */}
         <div className="flex gap-4 pt-4">
           <button
             type="button"
             onClick={handleCancel}
-            className="flex-1 h-12 px-6 bg-white/5 border border-white/10 rounded-lg text-white hover:bg-white/10 transition-all"
+            disabled={isUpdating}
+            className="flex-1 h-12 px-6 bg-white/5 border border-white/10 rounded-lg text-white hover:bg-white/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Отмена
           </button>
-          <ConfirmationPopUp
-            open={confirmOpen}
-            title="Отменить создание товара?"
-            message={`У вас ${uploadedImages.length} загруженных изображений. Они будут удалены. Продолжить?`}
-            confirmText="Да, удалить изображения"
-            cancelText="Отмена"
-            isLoading={confirmLoading}
-            onCancel={() => setConfirmOpen(false)}
-            onConfirm={handleConfirmCancel}
-          />
           <button
             type="button"
             onClick={handleSubmit}
-            className="flex-1 h-12 px-6 bg-linear-to-r from-[#8B7FFF] to-[#6DD5ED] rounded-lg text-white font-semibold hover:shadow-lg hover:shadow-[#8B7FFF]/50 transition-all"
+            disabled={isUpdating || isUploading}
+            className="flex-1 h-12 px-6 bg-gradient-to-r from-[#8B7FFF] to-[#6DD5ED] rounded-lg text-white font-semibold hover:shadow-lg hover:shadow-[#8B7FFF]/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isAddingProduct ? "Добавление..." : "Добавить"}
+            {isUpdating ? "Сохранение..." : "Сохранить изменения"}
           </button>
         </div>
       </div>
@@ -469,4 +498,4 @@ const ProductAdd = () => {
   );
 };
 
-export default ProductAdd;
+export default ProductEdit;
