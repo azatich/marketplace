@@ -109,6 +109,33 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+/* Стилизация кнопки закрытия для успешных toast */
+.toast-success button[data-close-button],
+.toast-success button[aria-label="Close"],
+.toast-success [data-button],
+.toast-error button[data-close-button],
+.toast-error button[aria-label="Close"],
+.toast-error [data-button] {
+  background: rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+  border: none !important;
+  opacity: 0.8;
+  transition: all 0.2s ease;
+}
+
+.toast-success button[data-close-button]:hover,
+.toast-success button[aria-label="Close"]:hover,
+.toast-success [data-button]:hover {
+  background: rgba(255, 255, 255, 0.3) !important;
+  opacity: 1;
+}
+
+/* Если используется SVG иконка внутри кнопки */
+.toast-success button svg {
+  color: #ffffff !important;
+  fill: #ffffff !important;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

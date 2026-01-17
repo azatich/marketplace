@@ -26,6 +26,10 @@ const ProductItem = ({ product }: { product: ProductItem }) => {
 
   return (
     <div className="group relative rounded-xl bg-[#1A1F2E]/80 backdrop-blur-xl border border-white/5 overflow-visible hover:border-white/10 hover:shadow-xl hover:shadow-[#8B7FFF]/10 transition-all">
+      {
+        !product.visibility && <span className="absolute z-50 left-2 top-2 bg-black/60 backdrop-blur-sm rounded-full text-xs px-2 py-1">Продукт скрыт</span> 
+      }
+      
       {/* Карусель изображений */}
       <div className="aspect-square overflow-hidden bg-white/5 rounded-t-xl relative">
         <AnimatePresence mode="wait">
@@ -41,7 +45,6 @@ const ProductItem = ({ product }: { product: ProductItem }) => {
           />
         </AnimatePresence>
 
-        {/* Стрелки навигации (только если больше 1 изображения) */}
         {product.images.length > 1 && (
           <>
             {/* Левая стрелка */}

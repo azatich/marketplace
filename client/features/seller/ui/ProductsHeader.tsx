@@ -10,7 +10,7 @@ const ProductsHeader = () => {
     <div className="flex items-center justify-between mb-8">
       <div>
         <h1 className="text-2xl mb-2">Ваши продукты</h1>
-        <p className="text-[#A0AEC0]">Manage your product catalog</p>
+        <p className="text-[#A0AEC0]">Управляйте своим каталогом товаров</p>
       </div>
       <motion.button
         whileHover={{ scale: 1.02 }}
