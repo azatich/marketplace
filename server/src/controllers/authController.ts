@@ -293,4 +293,100 @@ export class AuthController {
       })
     }
   }
+
+  static async getUser(req: Request, res: Response) {
+    try {
+      const token = req.cookies.token
+
+      if (!token) {
+        return res.status(401).json({
+          success: false,
+          message: "Токен не предоставлен",
+        });
+      }
+
+      const payload = JWTUtils.verify(token)
+
+      if (!payload) {
+        return res.status(401).json({
+          success: false,
+          message: "Недействительный токен",
+        });
+      }
+
+      if (payload.role === UserRole.CLIENT) {
+        const {data: clientData, error: clientFetchError} = await supabase
+        .from('users') 
+        .select(`
+          id,
+          email, 
+          first_name,
+          last_name,
+          role,
+          created_at,
+          updated_at,
+          customers (
+            username,
+            phone,
+            avatar_url,
+            gender,
+            birth_date,
+            addresses,
+          )
+          `)
+          .eq('id', payload.userId)
+          .single()
+
+          if (clientFetchError) {
+            return res.status(500).json({
+              success: false,
+              message: 'Ошибка при получении клиента',
+            })
+          }
+
+          return res.status(200).json(clientData)
+      }
+
+      if (payload.role === UserRole.SELLER) {
+        const { data: sellersData, error: errorFetchSellers } = await supabase
+        .from("users")
+        .select(
+          `
+        id,
+        email, 
+        first_name,
+        last_name,
+        role,
+        created_at,
+        sellers (
+          storeName,
+          description,
+          phone,
+          category,
+          approved
+        )
+        `
+        )
+        .eq('id', payload.userId)
+        .single();
+
+        if (errorFetchSellers) {
+          return res.status(500).json({
+            success: false,
+            message: "Ошибка при получении продавцов",
+          });
+        }
+
+        return res.status(200).json(sellersData)
+      }
+
+      return res.status(403).json({
+        success: false,
+        message: "Доступ запрещен",
+      });
+
+    } catch (error) {
+      
+    }
+  }
 }

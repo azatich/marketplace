@@ -126,9 +126,11 @@ export class SellerController {
         quantity,
         price,
         discountedPrice: discount_price,
-        images,
         visibility,
       } = req.body;
+
+      // Получаем файлы из multer
+      const files = req.files as Express.Multer.File[];
 
       // Валидация обязательных полей
       if (
@@ -140,6 +142,13 @@ export class SellerController {
       ) {
         return res.status(400).json({
           message: "Не все обязательные поля заполнены",
+        });
+      }
+
+      // Валидация изображений
+      if (!files || files.length === 0) {
+        return res.status(400).json({
+          message: "Необходимо загрузить хотя бы одно изображение",
         });
       }
 
@@ -164,11 +173,44 @@ export class SellerController {
         });
       }
 
-      // Валидация изображений (массив URL уже загружен на frontend)
-      if (!Array.isArray(images)) {
-        return res.status(400).json({
-          message: "Изображения должны быть массивом",
-        });
+      // Загружаем изображения в Supabase Storage
+      const imageUrls: string[] = [];
+      
+      for (const file of files) {
+        const fileExt = file.originalname.split(".").pop();
+        const fileName = `${Date.now()}-${Math.random()
+          .toString(36)
+          .substring(7)}.${fileExt}`;
+        const filePath = `products/${fileName}`;
+
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from("product-images")
+          .upload(filePath, file.buffer, {
+            cacheControl: "3600",
+            upsert: false,
+            contentType: file.mimetype,
+          });
+
+        if (uploadError) {
+          console.error("Ошибка загрузки изображения:", uploadError);
+          // Удаляем уже загруженные изображения при ошибке
+          for (const url of imageUrls) {
+            const path = url.split("/product-images/")[1];
+            if (path) {
+              await supabase.storage.from("product-images").remove([path]);
+            }
+          }
+          return res.status(500).json({
+            message: "Ошибка при загрузке изображений",
+            error: uploadError.message,
+          });
+        }
+
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from("product-images").getPublicUrl(uploadData.path);
+
+        imageUrls.push(publicUrl);
       }
 
       // Вставка продукта в базу данных
@@ -184,8 +226,8 @@ export class SellerController {
             quantity: parseInt(quantity),
             price: parseFloat(price),
             discount_price: discount_price ? parseFloat(discount_price) : null,
-            images: images,
-            visibility: visibility ?? true,
+            images: imageUrls,
+            visibility: visibility === "true" || visibility === true,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           },
@@ -194,6 +236,13 @@ export class SellerController {
 
       if (error) {
         console.error("Ошибка при добавлении продукта:", error);
+        // Удаляем загруженные изображения при ошибке вставки
+        for (const url of imageUrls) {
+          const path = url.split("/product-images/")[1];
+          if (path) {
+            await supabase.storage.from("product-images").remove([path]);
+          }
+        }
         return res.status(500).json({
           message: "Ошибка при добавлении продукта",
           error: error.message,
