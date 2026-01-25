@@ -7,7 +7,31 @@ export const useAddProduct = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: AddProductRequest) => {
-      const res = await api.post("/seller/products", data);
+      const formData = new FormData();
+      formData.append("title", data.title);
+      formData.append("category", data.category);
+      formData.append("subcategory", data.subcategory);
+      formData.append("quantity", data.quantity.toString());
+      formData.append("price", data.price.toString());
+      if (data.description) {
+        formData.append("description", data.description);
+      }
+      if (data.discountedPrice) {
+        formData.append("discountedPrice", data.discountedPrice.toString());
+      }
+      if (data.visibility !== undefined) {
+        formData.append("visibility", data.visibility.toString());
+      }
+      // Добавляем файлы изображений
+      data.images.forEach((file) => {
+        formData.append("images", file);
+      });
+
+      const res = await api.post("/seller/products", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
       return res.data;
     },
     onSuccess: (data) => {

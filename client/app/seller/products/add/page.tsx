@@ -3,12 +3,11 @@
 import { ArrowLeft, Upload, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
 import { ProductCategories } from "@/features/seller";
 import { useAddProduct } from "@/features/seller/hooks/useAddProduct";
 import ConfirmationPopUp from "@/components/ConfirmationPopUp";
 import { calculateDiscount } from "@/lib/calculateDiscount";
-import { supabase } from "@/lib/supabaseClient";
+import { showErrorToast } from "@/lib/toasts";
 
 
 const ProductAdd = () => {
@@ -24,98 +23,43 @@ const ProductAdd = () => {
     description: "",
     visibility: true,
   });
-  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
-  const [isUploading, setIsUploading] = useState(false);
+  const [uploadedImages, setUploadedImages] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const isSubmittingRef = useRef(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmLoading, setConfirmLoading] = useState(false);
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
-    setIsUploading(true);
+    const newFiles = files.filter((file) => {
+      // Проверяем, что это изображение
+      return file.type.startsWith("image/");
+    });
 
-    try {
-      const uploadPromises = files.map(async (file) => {
-        const fileExt = file.name.split(".").pop();
-        const fileName = `${Date.now()}-${Math.random()
-          .toString(36)
-          .substring(7)}.${fileExt}`;
-        const filePath = `products/${fileName}`;
+    // Создаем превью для новых файлов
+    const newPreviews = newFiles.map((file) => URL.createObjectURL(file));
 
-        const { data, error } = await supabase.storage
-          .from("product-images")
-          .upload(filePath, file, {
-            cacheControl: "3600",
-            upsert: false,
-            contentType: file.type,
-          });
-
-        if (error) {
-          console.error("Ошибка загрузки:", error);
-          throw error;
-        }
-
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from("product-images").getPublicUrl(data.path);
-
-        return publicUrl;
-      });
-
-      const urls = await Promise.all(uploadPromises);
-      setUploadedImages((prev) => [...prev, ...urls]);
-    } catch (error) {
-      console.error("Ошибка при загрузке изображений:", error);
-      alert(
-        `Ошибка при загрузке: ${
-          error instanceof Error ? error.message : "Неизвестная ошибка"
-        }`,
-      );
-    } finally {
-      setIsUploading(false);
-    }
+    setUploadedImages((prev) => [...prev, ...newFiles]);
+    setImagePreviews((prev) => [...prev, ...newPreviews]);
   };
 
-  const removeImage = async (index: number) => {
-    const imageUrl = uploadedImages[index];
-
-    try {
-      // Извлекаем путь к файлу из URL
-      const filePath = imageUrl.split("/product-images/")[1];
-
-      // Удаляем из Supabase Storage
-      const { error } = await supabase.storage
-        .from("product-images")
-        .remove([filePath]);
-
-      if (error) {
-        console.error("Ошибка удаления:", error);
-      }
-    } catch (error) {
-      console.error("Ошибка при удалении изображения:", error);
-    }
+  const removeImage = (index: number) => {
+    // Освобождаем URL превью
+    URL.revokeObjectURL(imagePreviews[index]);
 
     // Удаляем из state
     setUploadedImages((prev) => prev.filter((_, i) => i !== index));
+    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const deleteAllUploadedImages = async () => {
-    if (uploadedImages.length === 0) return;
-
-    for (const imageUrl of uploadedImages) {
-      try {
-        const filePath = imageUrl.split("/product-images/")[1];
-        if (filePath) {
-          await supabase.storage.from("product-images").remove([filePath]);
-        }
-      } catch (error) {
-        console.log("Ошибка удаления фото ");
-      }
-    }
+  const deleteAllUploadedImages = () => {
+    // Освобождаем все URL превью
+    imagePreviews.forEach((preview) => URL.revokeObjectURL(preview));
 
     setUploadedImages([]);
+    setImagePreviews([]);
   };
 
   const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -128,6 +72,11 @@ const ProductAdd = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (uploadedImages.length === 0) {
+      showErrorToast('Ошибка при добавлении продукта', 'Пожалуйста, загрузите хотя бы одно изображение')
+      return;
+    }
 
     isSubmittingRef.current = true;
 
@@ -146,7 +95,7 @@ const ProductAdd = () => {
     router.push("/seller/products");
   };
 
-  const handleCancel = async () => {
+  const handleCancel = () => {
     if (uploadedImages.length > 0) {
       setConfirmOpen(true);
       return;
@@ -154,10 +103,10 @@ const ProductAdd = () => {
     router.back();
   };
 
-  const handleConfirmCancel = async () => {
+  const handleConfirmCancel = () => {
     try {
       setConfirmLoading(true);
-      await deleteAllUploadedImages();
+      deleteAllUploadedImages();
       router.back();
     } catch (error) {
       setConfirmLoading(false);
@@ -173,15 +122,11 @@ const ProductAdd = () => {
   );
 
   useEffect(() => {
-    const cleanUpImage = async () => {
-      if (!isSubmittingRef.current && uploadedImages.length > 0) {
-        await deleteAllUploadedImages();
-      }
-    };
     return () => {
-      cleanUpImage();
+      // Освобождаем все URL превью при размонтировании компонента
+      imagePreviews.forEach((preview) => URL.revokeObjectURL(preview));
     };
-  }, []);
+  }, [imagePreviews]);
 
   return (
     <div>
@@ -206,7 +151,7 @@ const ProductAdd = () => {
             <label className="flex flex-col items-center justify-center h-48 border-2 border-dashed border-white/10 rounded-lg hover:border-[#8B7FFF]/50 transition-colors cursor-pointer group">
               <Upload className="text-[#A0AEC0] group-hover:text-[#8B7FFF] transition-colors" />
               <p className="text-sm text-[#A0AEC0] mb-1 mt-2">
-                {isUploading ? "Загрузка..." : "Перетащите изображения сюда"}
+                Перетащите изображения сюда
               </p>
               <p className="text-xs text-[#A0AEC0]">или нажмите для выбора</p>
               <input
@@ -215,16 +160,15 @@ const ProductAdd = () => {
                 accept="image/*"
                 className="hidden"
                 onChange={handleImageUpload}
-                disabled={isUploading}
               />
             </label>
 
             {uploadedImages.length > 0 && (
               <div className="grid grid-cols-4 gap-4">
-                {uploadedImages.map((imageUrl, index) => (
+                {imagePreviews.map((preview, index) => (
                   <div key={index} className="relative group">
                     <img
-                      src={imageUrl}
+                      src={preview}
                       alt={`Product ${index + 1}`}
                       className="w-full h-32 object-cover rounded-lg border border-white/10"
                     />

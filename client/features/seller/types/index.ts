@@ -165,7 +165,7 @@ export interface AddProductRequest {
   quantity: number;
   price: number;
   discountedPrice?: number;
-  images: string[];
+  images: File[];
   visibility?: boolean;
 }
 
