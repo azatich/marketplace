@@ -20,6 +20,7 @@ router.post('/products/toggle-visibility/:id', SellerController.toggleProductVis
 router.delete('/products/:id', SellerController.deleteProduct)
 
 router.put('/products/:id', SellerController.updateProduct)
+router.put('/profile', SellerController.updateProfile)
 
 
 

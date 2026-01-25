@@ -2,6 +2,7 @@ import { supabase } from "../server";
 import { Request, Response } from "express";
 import { JWTUtils } from "../utils/jwt";
 import { UserRole } from "../types";
+import bcrypt from "bcryptjs";
 
 export class SellerController {
   static async getSellerProducts(req: Request, res: Response) {
@@ -487,6 +488,99 @@ export class SellerController {
         product: data[0],
       });
     } catch (error) {
+      return res.status(500).json({
+        message: "Внутренняя ошибка сервера",
+        error: error instanceof Error ? error.message : "Неизвестная ошибка",
+      });
+    }
+  }
+
+  static async updateProfile(req: Request, res: Response) {
+    try {
+      const token = req.cookies.token;
+
+      if (!token) {
+        return res.status(401).json({ message: "Неавторизован" });
+      }
+
+      const payload = await JWTUtils.verify(token);
+
+      if (!payload || payload.role !== UserRole.SELLER) {
+        return res.status(403).json({ message: "Доступ запрещен" });
+      }
+
+      const {
+        firstName,
+        lastName,
+        phone,
+        description,
+        password,
+        avatarUrl,
+      } = req.body;
+
+      // Получаем текущего продавца
+      const { data: sellerData, error: sellerError } = await supabase
+        .from("sellers")
+        .select("user_id")
+        .eq("user_id", payload.userId)
+        .single();
+
+      if (sellerError || !sellerData) {
+        return res.status(404).json({ message: "Продавец не найден" });
+      }
+
+      // Обновляем данные пользователя
+      const userUpdateData: any = {
+        updated_at: new Date().toISOString(),
+      };
+
+      if (firstName) userUpdateData.first_name = firstName;
+      if (lastName) userUpdateData.last_name = lastName;
+      if (password) {
+        const saltRounds = 10;
+        userUpdateData.password = await bcrypt.hash(password, saltRounds);
+      }
+
+      const { error: userUpdateError } = await supabase
+        .from("users")
+        .update(userUpdateData)
+        .eq("id", payload.userId);
+
+      if (userUpdateError) {
+        console.error("Ошибка при обновлении пользователя:", userUpdateError);
+        return res.status(500).json({
+          message: "Ошибка при обновлении данных пользователя",
+          error: userUpdateError.message,
+        });
+      }
+
+      // Обновляем данные продавца
+      const sellerUpdateData: any = {
+        updated_at: new Date().toISOString(),
+      };
+
+      if (phone !== undefined) sellerUpdateData.phone = phone;
+      if (description !== undefined) sellerUpdateData.description = description;
+      if (avatarUrl !== undefined) sellerUpdateData.avatarUrl = avatarUrl;
+
+      const { error: sellerUpdateError } = await supabase
+        .from("sellers")
+        .update(sellerUpdateData)
+        .eq("user_id", payload.userId);
+
+      if (sellerUpdateError) {
+        console.error("Ошибка при обновлении продавца:", sellerUpdateError);
+        return res.status(500).json({
+          message: "Ошибка при обновлении данных продавца",
+          error: sellerUpdateError.message,
+        });
+      }
+
+      return res.status(200).json({
+        message: "Профиль успешно обновлен",
+      });
+    } catch (error) {
+      console.error("Неожиданная ошибка:", error);
       return res.status(500).json({
         message: "Внутренняя ошибка сервера",
         error: error instanceof Error ? error.message : "Неизвестная ошибка",

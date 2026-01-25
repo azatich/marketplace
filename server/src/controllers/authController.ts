@@ -363,7 +363,8 @@ export class AuthController {
           description,
           phone,
           category,
-          approved
+          approved,
+          avatarUrl
         )
         `
         )
