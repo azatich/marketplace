@@ -8,14 +8,27 @@ export interface UpdateSellerProfileRequest {
   phone?: string;
   description?: string;
   password?: string;
-  avatarUrl?: string;
+  avatar?: File;
 }
 
 export const useUpdateSellerProfile = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: UpdateSellerProfileRequest) => {
-      const res = await api.put("/seller/profile", data);
+      const formData = new FormData();
+      
+      if (data.firstName) formData.append("firstName", data.firstName);
+      if (data.lastName) formData.append("lastName", data.lastName);
+      if (data.phone !== undefined) formData.append("phone", data.phone);
+      if (data.description !== undefined) formData.append("description", data.description);
+      if (data.password) formData.append("password", data.password);
+      if (data.avatar) formData.append("avatar", data.avatar);
+
+      const res = await api.put("/seller/profile", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
       return res.data;
     },
     onSuccess: (data) => {

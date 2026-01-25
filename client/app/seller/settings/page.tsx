@@ -5,7 +5,6 @@ import { Camera, Save, User, Phone, FileText, Lock } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSellerProfile } from "@/features/seller/hooks/useSellerProfile";
 import { useUpdateSellerProfile } from "@/features/seller/hooks/useUpdateSellerProfile";
-import { supabase } from "@/lib/supabaseClient";
 import { showErrorToast } from "@/lib/toasts";
 
 const SettingsPage = () => {
@@ -69,54 +68,6 @@ const SettingsPage = () => {
       return;
     }
 
-    let avatarUrl = avatarPreview;
-
-    // Загружаем аватар, если выбран новый файл
-    if (avatarFile) {
-      setIsUploadingAvatar(true);
-      try {
-        const fileExt = avatarFile.name.split(".").pop();
-        const fileName = `avatars/${Date.now()}-${Math.random()
-          .toString(36)
-          .substring(7)}.${fileExt}`;
-
-        // Удаляем старый аватар, если он есть
-        if (profile?.sellers?.avatarUrl) {
-          const oldPath = profile.sellers.avatarUrl.split("/avatars/")[1];
-          if (oldPath) {
-            await supabase.storage.from("avatars").remove([oldPath]);
-          }
-        }
-
-        const { data, error } = await supabase.storage
-          .from("avatars")
-          .upload(fileName, avatarFile, {
-            cacheControl: "3600",
-            upsert: false,
-            contentType: avatarFile.type,
-          });
-
-        if (error) {
-          throw error;
-        }
-
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from("avatars").getPublicUrl(data.path);
-        avatarUrl = publicUrl;
-      } catch (error) {
-        console.error("Ошибка загрузки аватара:", error);
-        showErrorToast(
-          "Ошибка",
-          "Не удалось загрузить аватар. Попробуйте еще раз."
-        );
-        setIsUploadingAvatar(false);
-        return;
-      } finally {
-        setIsUploadingAvatar(false);
-      }
-    }
-
     // Подготавливаем данные для отправки
     const updateData: any = {};
     if (formData.firstName) updateData.firstName = formData.firstName;
@@ -125,8 +76,10 @@ const SettingsPage = () => {
     if (formData.description !== undefined)
       updateData.description = formData.description;
     if (formData.password) updateData.password = formData.password;
-    if (avatarUrl !== null) updateData.avatarUrl = avatarUrl;
+    // Отправляем файл напрямую на бэкенд
+    if (avatarFile) updateData.avatar = avatarFile;
 
+    setIsUploadingAvatar(true);
     updateProfile(updateData, {
       onSuccess: () => {
         setFormData((prev) => ({
@@ -135,6 +88,10 @@ const SettingsPage = () => {
           confirmPassword: "",
         }));
         setAvatarFile(null);
+        setIsUploadingAvatar(false);
+      },
+      onError: () => {
+        setIsUploadingAvatar(false);
       },
     });
   };
