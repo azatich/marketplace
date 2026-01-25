@@ -515,18 +515,79 @@ export class SellerController {
         phone,
         description,
         password,
-        avatarUrl,
       } = req.body;
 
-      // Получаем текущего продавца
+      // Получаем файл аватара из multer
+      const avatarFile = req.file as Express.Multer.File | undefined;
+
+      // Получаем текущего продавца для удаления старого аватара
       const { data: sellerData, error: sellerError } = await supabase
         .from("sellers")
-        .select("user_id")
+        .select("user_id, avatarUrl")
         .eq("user_id", payload.userId)
         .single();
 
       if (sellerError || !sellerData) {
         return res.status(404).json({ message: "Продавец не найден" });
+      }
+
+      let avatarUrl: string | undefined = undefined;
+
+      // Загружаем новый аватар, если он был передан
+      if (avatarFile) {
+        // Валидация типа файла
+        if (!avatarFile.mimetype.startsWith("image/")) {
+          return res.status(400).json({
+            message: "Файл должен быть изображением",
+          });
+        }
+
+        // Валидация размера файла (5MB)
+        if (avatarFile.size > 5 * 1024 * 1024) {
+          return res.status(400).json({
+            message: "Размер файла не должен превышать 5MB",
+          });
+        }
+
+        // Удаляем старый аватар, если он есть
+        if (sellerData.avatarUrl) {
+          try {
+            const oldPath = sellerData.avatarUrl.split("/avatars/")[1];
+            if (oldPath) {
+              await supabase.storage.from("avatars").remove([oldPath]);
+            }
+          } catch (error) {
+            console.error("Ошибка при удалении старого аватара:", error);
+            // Продолжаем выполнение, даже если не удалось удалить старый аватар
+          }
+        }
+
+        // Загружаем новый аватар
+        const fileExt = avatarFile.originalname.split(".").pop();
+        const fileName = `avatars/${Date.now()}-${Math.random()
+          .toString(36)
+          .substring(7)}.${fileExt}`;
+
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from("avatars")
+          .upload(fileName, avatarFile.buffer, {
+            cacheControl: "3600",
+            upsert: false,
+            contentType: avatarFile.mimetype,
+          });
+
+        if (uploadError) {
+          console.error("Ошибка загрузки аватара:", uploadError);
+          return res.status(500).json({
+            message: "Ошибка при загрузке аватара",
+            error: uploadError.message,
+          });
+        }
+
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from("avatars").getPublicUrl(uploadData.path);
+        avatarUrl = publicUrl;
       }
 
       // Обновляем данные пользователя
@@ -548,6 +609,13 @@ export class SellerController {
 
       if (userUpdateError) {
         console.error("Ошибка при обновлении пользователя:", userUpdateError);
+        // Если был загружен новый аватар, удаляем его при ошибке
+        if (avatarUrl) {
+          const path = avatarUrl.split("/avatars/")[1];
+          if (path) {
+            await supabase.storage.from("avatars").remove([path]);
+          }
+        }
         return res.status(500).json({
           message: "Ошибка при обновлении данных пользователя",
           error: userUpdateError.message,
@@ -570,6 +638,13 @@ export class SellerController {
 
       if (sellerUpdateError) {
         console.error("Ошибка при обновлении продавца:", sellerUpdateError);
+        // Если был загружен новый аватар, удаляем его при ошибке
+        if (avatarUrl) {
+          const path = avatarUrl.split("/avatars/")[1];
+          if (path) {
+            await supabase.storage.from("avatars").remove([path]);
+          }
+        }
         return res.status(500).json({
           message: "Ошибка при обновлении данных продавца",
           error: sellerUpdateError.message,
