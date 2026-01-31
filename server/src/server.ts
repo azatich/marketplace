@@ -6,6 +6,7 @@ import { connectDb } from "./connect.js";
 import authRouter from "./routes/auth";
 import adminRouter from "./routes/admin.js";
 import sellerRouter from "./routes/seller.js";
+import clientRouter from "./routes/client.js";
 
 
 dotenv.config();
@@ -32,6 +33,7 @@ app.use(cookieParser());
 app.use("/api/auth", authRouter);
 app.use('/api/users', adminRouter)
 app.use('/api/seller', sellerRouter)
+app.use('/api/client', clientRouter)
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
