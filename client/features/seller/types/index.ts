@@ -173,7 +173,7 @@ export interface ProductItem {
   id: string;
   seller_id: string;
   title: string;
-  description: string;
+  description?: string;
   category: string;
   subcategory: string;
   quantity: number;

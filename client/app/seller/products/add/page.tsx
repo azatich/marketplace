@@ -278,11 +278,11 @@ const ProductAdd = () => {
           <div className="grid grid-cols-2 gap-6">
             <div>
               <label className="block text-sm text-[#A0AEC0] mb-2">
-                Цена (USD)
+                Цена (тенге)
               </label>
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#A0AEC0]">
-                  $
+                  ₸
                 </span>
                 <input
                   type="number"
@@ -302,11 +302,11 @@ const ProductAdd = () => {
 
             <div>
               <label className="block text-sm text-[#A0AEC0] mb-2">
-                Цена со скидкой (USD)
+                Цена со скидкой (тенге)
               </label>
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#A0AEC0]">
-                  $
+                  ₸
                 </span>
                 <input
                   type="number"

@@ -36,8 +36,8 @@ const ProductItem = ({ product }: { product: ProductItem }) => {
     );
   };
 
-  const descriptionWords = product.description.split(" ");
-  const isLongDescription = descriptionWords.length > 10;
+  const descriptionWords = product.description?.split(" ") ?? [];
+  const isLongDescription = descriptionWords.length > 10 ;
   const truncatedDescription = isLongDescription
     ? descriptionWords.slice(0, 10).join(" ")
     : product.description;

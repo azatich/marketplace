@@ -4,7 +4,7 @@ import { toast } from "sonner";
 export const showSuccessToast = (message: string, description?: string) => {
   return toast.success(message, {
     description: description,
-    duration: 3000,
+    duration: 2000,
     closeButton: true,
     style: {
       background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
@@ -25,7 +25,7 @@ export const showSuccessToast = (message: string, description?: string) => {
 export const showErrorToast = (message: string, description?: string) => {
   return toast.error(message, {
     description: description || message,
-    duration: 3000,
+    duration: 2000,
     closeButton: true,
     style: {
       background: "linear-gradient(135deg, #dc2626 0%, #991b1b 100%)",

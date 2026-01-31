@@ -7,12 +7,11 @@ const roleBasedRoutes = {
   admin: "/admin/clients",
 };
 
-const publicRoutes = ["/signup", "/signup-seller", "/login"];
+const publicRoutes = ["/signup", "/signup-seller", "/login", "/home", "/product", "/cart"];
 
 const protectedRoutes = {
   "/seller": ["seller"],
   "/admin/clients": ["admin"],
-  '/home': ['client'],
 };
 
 async function verifyToken(token: string) {
@@ -50,6 +49,11 @@ export async function middleware(req: NextRequest) {
     return res;
   }
 
+  // Не перенаправляем, если пользователь на публичных страницах каталога
+  if (isPublicRoute && (pathname.startsWith("/home") || pathname.startsWith("/product") || pathname.startsWith("/cart"))) {
+    return NextResponse.next();
+  }
+  
   if (isPublicRoute) {
     const homeRoute = roleBasedRoutes[user.role];
     return NextResponse.redirect(new URL(homeRoute, req.url));
