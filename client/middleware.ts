@@ -2,12 +2,12 @@ import { jwtVerify } from "jose";
 import { NextRequest, NextResponse } from "next/server";
 
 const roleBasedRoutes = {
-  client: "/home",
+  client: "/catalog",
   seller: "/seller/dashboard",
   admin: "/admin/clients",
 };
 
-const publicRoutes = ["/signup", "/signup-seller", "/login", "/home", "/product", "/cart"];
+const publicRoutes = ["/signup", "/signup-seller", "/login"];
 
 const protectedRoutes = {
   "/seller": ["seller"],

@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
 const roleBasedRoutes = {
-  client: "/home",
+  client: "/catalog",
   seller: "/seller/dashboard",
   admin: "/admin/clients",
 };

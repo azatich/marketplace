@@ -9,12 +9,11 @@ import { showErrorToast } from "@/lib/toasts";
 
 const SettingsPage = () => {
   const { data: profile, isLoading } = useSellerProfile();
-  console.log(profile);
   
   const { mutate: updateProfile, isPending: isUpdating } =
     useUpdateSellerProfile();
   const [formData, setFormData] = useState({
-    firstName: "",
+    firstName: "", 
     lastName: "",
     phone: "",
     description: "",
