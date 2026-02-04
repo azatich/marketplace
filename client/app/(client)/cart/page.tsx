@@ -49,7 +49,7 @@ const CartPage = () => {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => router.push("/home")}
+            onClick={() => router.push("/catalog")}
             className="px-6 py-3 bg-linear-to-r from-[#8B7FFF] to-[#6DD5ED] rounded-lg text-white font-semibold hover:shadow-lg hover:shadow-[#8B7FFF]/50 transition-all"
           >
             Перейти в каталог
@@ -268,7 +268,7 @@ const CartPage = () => {
             </motion.button>
 
             <button
-              onClick={() => router.push("/home")}
+              onClick={() => router.push("/catalog")}
               className="w-full mt-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white hover:bg-white/10 transition-colors"
             >
               Продолжить покупки
