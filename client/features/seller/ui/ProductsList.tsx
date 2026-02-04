@@ -2,9 +2,9 @@
 
 import { Spinner } from "@/components/ui/spinner";
 import { useProductsQuery } from "../hooks/useProductsQuery";
-import ProductItem from "./ProductItem";
+import { ProductItem } from "./ProductItem";
 
-const ProductsList = () => {
+export const ProductsList = () => {
   const { data: products, isPending } = useProductsQuery();
 
   if (isPending) {
@@ -23,5 +23,3 @@ const ProductsList = () => {
     </div>
   );
 };
-
-export default ProductsList;

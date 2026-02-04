@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import type { ProductItem } from "../types";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Edit,
@@ -13,8 +12,9 @@ import { useToggleVisibility } from "../hooks/useToggleVisibility";
 import { useDeleteMutation } from "../hooks/useDeleteMutation";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { IProductItem } from "../types";
 
-const ProductItem = ({ product }: { product: ProductItem }) => {
+export const ProductItem = ({ product }: { product: IProductItem }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const { mutate: toggleVisibility, isPending: isPendingToggleVisibility } =
     useToggleVisibility();
@@ -198,5 +198,3 @@ const ProductItem = ({ product }: { product: ProductItem }) => {
     </div>
   );
 };
-
-export default ProductItem;

@@ -1,9 +1,7 @@
 "use client";
 
 import { Spinner } from "@/components/ui/spinner";
-import { useUpdateProduct } from "@/features/seller/hooks/useUpdateProduct";
-import { ProductCategories } from "@/features/seller";
-import { useSingleProduct } from "@/features/seller/hooks/useSingleProduct";
+import { ProductCategories, useSingleProduct, useUpdateProduct } from "@/features/seller";
 import { calculateDiscount } from "@/lib/calculateDiscount";
 import { supabase } from "@/lib/supabaseClient";
 import { ArrowLeft, Upload, X } from "lucide-react";

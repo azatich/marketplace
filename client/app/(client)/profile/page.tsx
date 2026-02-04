@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { showSuccessToast, showErrorToast } from "@/lib/toasts";
 import { useClientProfile } from "@/features/client/hooks/useClientProfile";
-import { useUpdateClientProfile } from "@/features/client/hooks/useUpdateSellerProfile";
+import { useUpdateClientProfile } from "@/features/client/hooks/useUpdateClientProfile";
 import { InputField } from "@/features/client/ui/InputField";
 
 interface Address {
@@ -197,7 +197,7 @@ const ClientProfilePage = () => {
               </label>
             </div>
             <h2 className="text-xl font-bold text-white mb-1">{profile.username || "Пользователь"}</h2>
-            <p className="text-[#A0AEC0] text-sm mb-6 break-words">{profile.email}</p>
+            <p className="text-[#A0AEC0] text-sm mb-6 wrap-break-word">{profile.email}</p>
           </div>
 
           {/* 2. Адреса доставки (В ЛЕВОЙ КОЛОНКЕ) */}
@@ -284,7 +284,7 @@ const ClientProfilePage = () => {
                 <label className="text-sm text-[#A0AEC0]">Дата рождения</label>
                 <div className="relative">
                   <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#A0AEC0]" />
-                  <input type="date" value={profile.birth_date} onChange={(e) => handleInputChange("birth_date", e.target.value)} className="w-full h-12 pl-12 pr-4 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#8B7FFF]/50 transition-all [color-scheme:dark]" />
+                  <input type="date" value={profile.birth_date} onChange={(e) => handleInputChange("birth_date", e.target.value)} className="w-full h-12 pl-12 pr-4 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#8B7FFF]/50 transition-all scheme:dark" />
                 </div>
               </div>
             </div>

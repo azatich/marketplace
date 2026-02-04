@@ -1,6 +1,4 @@
-import ProductItem from "@/features/seller/ui/ProductItem";
-import ProductsHeader from "@/features/seller/ui/ProductsHeader";
-import ProductsList from "@/features/seller/ui/ProductsList";
+import { ProductsHeader, ProductsList } from "@/features/seller";
 
 const Products = () => {
   return (

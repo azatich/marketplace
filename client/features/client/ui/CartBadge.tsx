@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { useCartStore } from "../hooks/useCart";
 
-const CartBadge = () => {
+export const CartBadge = () => {
   const { getTotalItems } = useCartStore();
   const cartItemsCount = getTotalItems();
 
@@ -17,5 +17,3 @@ const CartBadge = () => {
     </motion.span>
   );
 };
-
-export default CartBadge;

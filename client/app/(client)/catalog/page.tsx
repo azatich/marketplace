@@ -2,10 +2,9 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Search, Grid, List, Filter, X, ChevronDown } from "lucide-react";
+import { Search, Grid, List, Filter, X } from "lucide-react";
 import { useProducts } from "@/features/client/hooks/useProducts";
-import { ProductCategories, ProductFilters } from "@/features/client/types";
-import { Product } from "@/features/client/types";
+import { Product, ProductCategories, ProductFilters } from "@/features/client/types";
 import { useRouter } from "next/navigation";
 import { calculateDiscount } from "@/lib/calculateDiscount";
 import { showSuccessToast } from "@/lib/toasts";

@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 
-const ProductsHeader = () => {
+export const ProductsHeader = () => {
   const router = useRouter();
   return (
     <div className="flex items-center justify-between mb-8">
@@ -24,5 +24,3 @@ const ProductsHeader = () => {
     </div>
   );
 };
-
-export default ProductsHeader;
