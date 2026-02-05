@@ -1,18 +1,19 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { ShoppingCart, Trash2, Plus, Minus, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { calculateDiscount } from "@/lib/calculateDiscount";
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 import ConfirmationPopUp from "@/components/ConfirmationPopUp";
-import { useState } from "react";
 import { useCartStore } from "@/features/client";
-
+import CheckoutModal from "@/features/client/ui/CheckoutModal";
 const CartPage = () => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmLoading, setConfirmLoading] = useState(false);
-  
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false); // Состояние для модалки Checkout
+
   const router = useRouter();
   const {
     cart,
@@ -79,9 +80,17 @@ const CartPage = () => {
     }
   }
 
-
   return (
     <div className="container mx-auto px-4 py-8">
+      {/* Модальное окно оформления заказа */}
+      <CheckoutModal
+        isOpen={isCheckoutOpen}
+        onClose={() => setIsCheckoutOpen(false)}
+        totalAmount={finalTotal}
+        cartItems={cart}
+        clearCart={clearCart}
+      />
+
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -105,15 +114,15 @@ const CartPage = () => {
       </motion.div>
 
       <ConfirmationPopUp
-            open={confirmOpen}
-            title="Очистить корзину?"
-            message={`Все товары с корзины будут удалены`}
-            confirmText="Да"
-            cancelText="Отмена"
-            isLoading={confirmLoading}
-            onCancel={() => setConfirmOpen(false)}
-            onConfirm={handleConfirmClear}
-          />
+        open={confirmOpen}
+        title="Очистить корзину?"
+        message={`Все товары с корзины будут удалены`}
+        confirmText="Да"
+        cancelText="Отмена"
+        isLoading={confirmLoading}
+        onCancel={() => setConfirmOpen(false)}
+        onConfirm={handleConfirmClear}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Cart Items */}
@@ -262,6 +271,7 @@ const CartPage = () => {
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
+              onClick={() => setIsCheckoutOpen(true)} // Открываем модалку
               className="w-full py-3 bg-linear-to-r from-[#8B7FFF] to-[#6DD5ED] rounded-lg text-white font-semibold hover:shadow-lg hover:shadow-[#8B7FFF]/50 transition-all"
             >
               Оформить заказ
@@ -281,4 +291,3 @@ const CartPage = () => {
 };
 
 export default CartPage;
-
