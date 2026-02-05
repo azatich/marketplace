@@ -587,6 +587,7 @@ export class SellerController {
         const {
           data: { publicUrl },
         } = supabase.storage.from("avatars").getPublicUrl(uploadData.path);
+        
         avatarUrl = publicUrl;
       }
 

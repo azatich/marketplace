@@ -1,5 +1,8 @@
 import { supabase } from "../server";
 import { Request, Response } from "express";
+import { JWTUtils } from "../utils/jwt";
+import { UserRole } from "../types";
+import bcrypt from "bcryptjs";
 
 export class ClientController {
   // Получение всех видимых товаров с фильтрами, поиском и сортировкой
@@ -27,7 +30,7 @@ export class ClientController {
       // Поиск по названию и описанию
       if (search && typeof search === "string") {
         query = query.or(
-          `title.ilike.%${search}%,description.ilike.%${search}%`
+          `title.ilike.%${search}%,description.ilike.%${search}%`,
         );
       }
 
@@ -124,7 +127,7 @@ export class ClientController {
       // Получаем информацию о продавцах для товаров
       if (data && data.length > 0) {
         const sellerIds = [...new Set(data.map((p) => p.seller_id))];
-        
+
         const { data: sellersData, error: sellersError } = await supabase
           .from("sellers")
           .select(
@@ -137,15 +140,13 @@ export class ClientController {
               first_name,
               last_name
             )
-          `
+          `,
           )
           .in("user_id", sellerIds);
 
         if (!sellersError && sellersData) {
           // Создаем мапу для быстрого поиска продавца по user_id
-          const sellersMap = new Map(
-            sellersData.map((s) => [s.user_id, s])
-          );
+          const sellersMap = new Map(sellersData.map((s) => [s.user_id, s]));
 
           // Объединяем данные
           const productsWithSellers = data.map((product) => ({
@@ -213,7 +214,7 @@ export class ClientController {
             last_name,
             email
           )
-        `
+        `,
         )
         .eq("user_id", data.seller_id)
         .single();
@@ -266,7 +267,7 @@ export class ClientController {
         ([category, subcategories]) => ({
           category,
           subcategories: Array.from(subcategories),
-        })
+        }),
       );
 
       return res.status(200).json(categories);
@@ -277,5 +278,108 @@ export class ClientController {
       });
     }
   }
-}
 
+static async updateProfile(req: Request, res: Response) {
+  try {
+    const token = req.cookies.token;
+    if (!token) return res.status(401).json({ message: "Неавторизован" });
+
+    const payload = await JWTUtils.verify(token);
+    if (!payload || payload.role !== UserRole.CLIENT) {
+      return res.status(403).json({ message: "Доступ запрещен" });
+    }
+
+    const {
+      first_name,
+      last_name,
+      username,
+      password,
+      phone,
+      gender,
+      birth_date,
+      addresses,
+    } = req.body;
+
+    const avatarFile = req.file;
+
+    // 1. Проверяем существование клиента
+    const { data: clientData, error: clientError } = await supabase
+      .from("customers")
+      .select("user_id, avatar_url")
+      .eq("user_id", payload.userId)
+      .single();
+
+    if (clientError || !clientData) {
+      return res.status(404).json({ message: "Клиент не найден" });
+    }
+
+    let avatarUrl = clientData.avatar_url;
+
+    // 2. Обработка загрузки аватара (если файл передан)
+    if (avatarFile) {
+      // Удаляем старый файл, если он был
+      if (clientData.avatar_url) {
+        const oldPath = clientData.avatar_url.split("/avatars/")[1];
+        if (oldPath) await supabase.storage.from("avatars").remove([oldPath]);
+      }
+
+      const fileExt = avatarFile.originalname.split(".").pop();
+      const fileName = `avatars/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(fileName, avatarFile.buffer, {
+          contentType: avatarFile.mimetype,
+          upsert: false
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(uploadData.path);
+      avatarUrl = publicUrl;
+    }
+
+    // 3. Обновление таблицы USERS (имя, фамилия, пароль)
+    const userUpdateData: any = { updated_at: new Date().toISOString() };
+    if (first_name) userUpdateData.first_name = first_name;
+    if (last_name) userUpdateData.last_name = last_name;
+    if (password) {
+      userUpdateData.password = await bcrypt.hash(password, 10);
+    }
+
+    if (Object.keys(userUpdateData).length > 1) {
+      const { error: uError } = await supabase.from("users").update(userUpdateData).eq("id", payload.userId);
+      if (uError) throw uError;
+    }
+
+    // 4. Обновление таблицы CUSTOMERS
+    const clientUpdateData: any = { 
+        updated_at: new Date().toISOString(),
+        avatar_url: avatarUrl // Обновляем ссылку на аватар
+    };
+
+    if (username !== undefined) clientUpdateData.username = username;
+    if (phone !== undefined) clientUpdateData.phone = phone;
+    if (gender !== undefined) clientUpdateData.gender = gender;
+    if (birth_date !== undefined) clientUpdateData.birth_date = birth_date;
+    
+    // Обработка адресов (парсим из строки JSON)
+    if (addresses !== undefined) {
+      clientUpdateData.addresses = typeof addresses === 'string' ? JSON.parse(addresses) : addresses;
+    }
+
+    const { error: cError } = await supabase
+      .from("customers") // ИСПРАВЛЕНО: была таблица sellers
+      .update(clientUpdateData)
+      .eq("user_id", payload.userId);
+
+    if (cError) throw cError;
+
+    return res.status(200).json({ message: "Профиль успешно обновлен" });
+
+  } catch (error: any) {
+    console.error("Update Profile Error:", error);
+    return res.status(500).json({ message: "Ошибка при обновлении профиля", error: error.message });
+  }
+}
+}

@@ -3,7 +3,6 @@ import { supabase } from "../server.js";
 import bcrypt from "bcryptjs";
 import { SignUpResponse, UserRole } from "../types/index.js";
 import { JWTUtils } from "../utils/jwt.js";
-import { fail } from "assert";
 
 export class AuthController {
   static async signup(req: Request, res: Response) {
@@ -93,99 +92,81 @@ export class AuthController {
     }
   }
 
-  static async sellerSignup(req: Request, res: Response) {
-    try {
-      const {
+static async sellerSignup(req: Request, res: Response) {
+  try {
+    const {
+      email,
+      password,
+      storeName,
+      description,
+      category,
+      sellerFirstName,
+      sellerLastName,
+      phone,
+    } = req.body;
+
+    // 1. Проверка email (как и было)
+    const { data: existingUser } = await supabase
+      .from("users")
+      .select("email")
+      .eq("email", email)
+      .single();
+
+    if (existingUser) {
+      return res.status(409).json({ success: false, message: "Email уже занят" });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    // 2. Создаем пользователя (Триггер в БД тут же создаст запись в 'sellers')
+    const { data: userData, error: userError } = await supabase
+      .from("users")
+      .insert({
         email,
-        password,
-        storeName,
+        password: passwordHash,
+        first_name: sellerFirstName,
+        last_name: sellerLastName,
+        role: UserRole.SELLER,
+      })
+      .select()
+      .single();
+
+    if (userError || !userData) {
+      console.error("User creation error:", userError);
+      return res.status(500).json({ success: false, message: "Ошибка создания пользователя" });
+    }
+
+    const { error: sellerError } = await supabase
+      .from("sellers")
+      .update({
+        storeName,      // Обновляем реальным названием магазина
         description,
-        category,
-        sellerFirstName,
-        sellerLastName,
         phone,
-      } = req.body;
+        category,
+        approved: false // На всякий случай подтверждаем статус
+      })
+      .eq("user_id", userData.id); // Привязываемся к созданному ID
 
-      const { data: existingUser } = await supabase
-        .from("users")
-        .select("email")
-        .eq("email", email)
-        .single();
-
-      if (existingUser) {
-        res.status(409).json({
-          success: false,
-          message: "Пользователь с таким email уже существует",
-        });
-        return;
-      }
-
-      const saltRounds = 10;
-      const passwordHash = await bcrypt.hash(password, saltRounds);
-
-      // Создаем пользователя
-      const { data: userDataInUsersTable, error: userError } = await supabase
-        .from("users")
-        .insert({
-          email,
-          password: passwordHash,
-          first_name: sellerFirstName,
-          last_name: sellerLastName,
-          role: UserRole.SELLER,
-        })
-        .select()
-        .single();
-
-      if (userError || !userDataInUsersTable) {
-        console.error("User creation error:", userError);
-        res.status(500).json({
-          success: false,
-          message: "Ошибка при создании пользователя",
-          error: userError?.message,
-        });
-        return;
-      }
-
-      // Не выдаем токен и не устанавливаем cookie для продавца, который еще не одобрен.
-      // Просто сообщаем, что заявка принята.
-      res.status(201).json({
-        success: true,
-        message: "Заявка на регистрацию продавца успешно отправлена. Ожидайте одобрения.",
-      });
-
-      const { data: userDataInSellersTable, error: sellerError } =
-        await supabase
-          .from("sellers")
-          .insert({
-            user_id: userDataInUsersTable.id,
-            storeName,
-            description,
-            phone,
-            category,
-            approved: false,
-          })
-          .select()
-          .single();
-
-      if (sellerError) {
-        await supabase.from("users").delete().eq("id", userDataInUsersTable.id);
-
-        res.status(500).json({
-          success: false,
-          message: "Ошибка создания профиля продавца",
-          error: sellerError,
-        });
-        return;
-      }
-
-    } catch (error) {
-      console.error("Signup error:", error);
-      res.status(500).json({
+    if (sellerError) {
+      await supabase.from("users").delete().eq("id", userData.id);
+      return res.status(500).json({
         success: false,
-        message: "Внутренняя ошибка сервера",
+        message: "Ошибка при заполнении данных магазина",
+        error: sellerError.message
       });
     }
+
+    // 4. И только в самом конце отправляем ОДИН ответ
+    return res.status(201).json({
+      success: true,
+      message: "Заявка принята. Ожидайте одобрения администратором.",
+    });
+
+  } catch (error) {
+    console.error("Signup error:", error);
+    return res.status(500).json({ success: false, message: "Внутренняя ошибка сервера" });
   }
+}
 
   static async login(req: Request, res: Response) {
     try {
@@ -331,7 +312,7 @@ export class AuthController {
             avatar_url,
             gender,
             birth_date,
-            addresses,
+            addresses
           )
           `)
           .eq('id', payload.userId)
@@ -340,7 +321,7 @@ export class AuthController {
           if (clientFetchError) {
             return res.status(500).json({
               success: false,
-              message: 'Ошибка при получении клиента',
+              message: clientFetchError.message,
             })
           }
 
