@@ -6,9 +6,8 @@ import { Search, Grid, List, Filter, X } from "lucide-react";
 import { useProducts } from "@/features/client/hooks/useProducts";
 import { Product, ProductCategories, ProductFilters } from "@/features/client/types";
 import { useRouter } from "next/navigation";
-import { calculateDiscount } from "@/lib/calculateDiscount";
-import { showSuccessToast } from "@/lib/toasts";
-import { useCartStore } from "@/features/client";
+import { ProductCard, useCartStore } from "@/features/client";
+import { ProductListItem } from "@/features/client/ui/ProductListItem";
 
 const CatalogPage = () => {
   const router = useRouter();
@@ -154,7 +153,7 @@ const CatalogPage = () => {
                 onChange={(e) => handleFilterChange("category", e.target.value || undefined)}
                 className="w-full h-10 px-3 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#8B7FFF]/50"
               >
-                <option value="">Все категории</option>
+                <option className="bg-[#1A1F2E]" value="">Все категории</option>
                 {Object.entries(ProductCategories).map(([key, value]) => (
                   <option key={key} value={key} className="bg-[#1A1F2E]">
                     {value.title}
@@ -294,128 +293,6 @@ const CatalogPage = () => {
         </>
       )}
     </div>
-  );
-};
-
-const ProductCard = ({
-  product,
-  onAddToCart,
-  onClick,
-}: {
-  product: Product;
-  onAddToCart: (product: Product) => void;
-  onClick: () => void;
-}) => {
-  const discount = calculateDiscount(product.price, product.discount_price || 0);
-  const finalPrice = product.discount_price || product.price;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      whileHover={{ scale: 1.02 }}
-      className="bg-[#1A1F2E]/80 backdrop-blur-xl border border-white/5 rounded-xl overflow-hidden cursor-pointer group"
-      onClick={onClick}
-    >
-      <div className="relative aspect-square overflow-hidden">
-        <img
-          src={product.images[0] || "/placeholder.jpg"}
-          alt={product.title}
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-        />
-        {discount > 0 && (
-          <div className="absolute top-2 right-2 bg-[#FF6B6B] text-white text-xs font-bold px-2 py-1 rounded">
-            -{discount}%
-          </div>
-        )}
-      </div>
-      <div className="p-4">
-        <h3 className="font-semibold mb-2 line-clamp-2">{product.title}</h3>
-        <div className="flex items-center gap-2 mb-2">
-          <span className="text-lg font-bold text-white">₸{finalPrice.toFixed(2)}</span>
-          {product.discount_price && (
-            <span className="text-sm text-[#A0AEC0] line-through">
-              ₸{product.price.toFixed(2)}
-            </span>
-          )}
-        </div>
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={(e) => {
-            e.stopPropagation();
-            onAddToCart(product);
-            showSuccessToast('Товар успешно добавлен в корзину', '')
-          }}
-          disabled={product.quantity === 0}
-          className="w-full py-2 bg-linear-to-r from-[#8B7FFF] to-[#6DD5ED] rounded-lg text-white font-semibold hover:shadow-lg hover:shadow-[#8B7FFF]/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {product.quantity === 0 ? "Нет в наличии" : "В корзину"}
-        </motion.button>
-      </div>
-    </motion.div>
-  );
-};
-
-const ProductListItem = ({
-  product,
-  onAddToCart,
-  onClick,
-}: {
-  product: Product;
-  onAddToCart: (product: Product) => void;
-  onClick: () => void;
-}) => {
-  const discount = calculateDiscount(product.price, product.discount_price || 0);
-  const finalPrice = product.discount_price || product.price;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      className="bg-[#1A1F2E]/80 backdrop-blur-xl border border-white/5 rounded-xl p-4 flex gap-4 cursor-pointer group hover:bg-[#1A1F2E] transition-colors"
-      onClick={onClick}
-    >
-      <div className="relative w-32 h-32 shrink-0 overflow-hidden rounded-lg">
-        <img
-          src={product.images[0] || "/placeholder.jpg"}
-          alt={product.title}
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-        />
-        {discount > 0 && (
-          <div className="absolute top-1 right-1 bg-[#FF6B6B] text-white text-xs font-bold px-2 py-1 rounded">
-            -{discount}%
-          </div>
-        )}
-      </div>
-      <div className="flex-1">
-        <h3 className="font-semibold mb-2">{product.title}</h3>
-        <p className="text-sm text-[#A0AEC0] mb-3 line-clamp-2">{product.description}</p>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-xl font-bold text-white">₸{finalPrice.toFixed(2)}</span>
-            {product.discount_price && (
-              <span className="text-sm text-[#A0AEC0] line-through">
-                ₸{product.price.toFixed(2)}
-              </span>
-            )}
-          </div>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={(e) => {
-              e.stopPropagation();
-              onAddToCart(product);
-              showSuccessToast('Товар успешно добавлен в корзину', '')
-            }}
-            disabled={product.quantity === 0}
-            className="px-6 py-2 bg-linear-to-r from-[#8B7FFF] to-[#6DD5ED] rounded-lg text-white font-semibold hover:shadow-lg hover:shadow-[#8B7FFF]/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {product.quantity === 0 ? "Нет в наличии" : "В корзину"}
-          </motion.button>
-        </div>
-      </div>
-    </motion.div>
   );
 };
 

@@ -6,7 +6,7 @@ import dynamic from "next/dynamic";
 import LogoutButton from "@/components/Logout";
 import { useClientProfile } from "../hooks/useClientProfile";
 
-const CartBadge = dynamic(() => import('../../../features/client/ui/CartBadge'), {
+const CartBadge = dynamic(() => import('../ui/CartBadge').then((mod) => mod.CartBadge), {
   ssr: false,
   loading: () => <div className="w-5 h-5" />
 })

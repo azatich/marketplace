@@ -1,3 +1,5 @@
+'use client'
+
 import { Search, Bell, ChevronDown, User } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState } from "react";

@@ -140,7 +140,6 @@ const ProductEdit = () => {
     e.preventDefault();
 
     isSubmittingRef.current = true;
-
     updateProduct({
       id: id as string,
       title: productForm.name,

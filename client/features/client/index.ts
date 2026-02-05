@@ -7,3 +7,4 @@ export { useUpdateClientProfile } from "./hooks/useUpdateClientProfile";
 export { Header } from "./ui/Header";
 export { CartBadge } from "./ui/CartBadge";
 export { InputField } from "./ui/InputField";
+export { ProductCard } from "./ui/ProductCard";
