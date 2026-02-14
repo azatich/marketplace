@@ -6,10 +6,13 @@ import dynamic from "next/dynamic";
 import LogoutButton from "@/components/Logout";
 import { useClientProfile } from "../hooks/useClientProfile";
 
-const CartBadge = dynamic(() => import('../ui/CartBadge').then((mod) => mod.CartBadge), {
-  ssr: false,
-  loading: () => <div className="w-5 h-5" />
-})
+const CartBadge = dynamic(
+  () => import("../ui/CartBadge").then((mod) => mod.CartBadge),
+  {
+    ssr: false,
+    loading: () => <div className="w-5 h-5" />,
+  },
+);
 
 export const Header = () => {
   const pathname = usePathname();
@@ -17,7 +20,7 @@ export const Header = () => {
 
   const customer = profileData?.customers?.[0];
   const avatarUrl = customer?.avatar_url;
-  
+
   const username = customer?.username || profileData?.email || "?";
   const initial = username.charAt(0).toUpperCase();
 
@@ -54,19 +57,29 @@ export const Header = () => {
               Корзина
               <CartBadge />
             </Link>
+            <Link
+              href="/orders"
+              className={`relative text-sm ${
+                pathname === "/orders"
+                  ? "text-white"
+                  : "text-[#A0AEC0] hover:text-white"
+              }`}
+            >
+              Заказы
+            </Link>
           </nav>
 
           <div className="flex items-center gap-4">
             {/* Аватар пользователя */}
             {!isLoading && profileData && (
-              <Link 
-                href="/profile" 
+              <Link
+                href="/profile"
                 className="group relative w-10 h-10 rounded-full overflow-hidden border border-white/10 hover:border-[#8B7FFF] transition-all duration-300"
               >
                 {avatarUrl ? (
-                  <img 
-                    src={avatarUrl} 
-                    alt={username} 
+                  <img
+                    src={avatarUrl}
+                    alt={username}
                     className="w-full h-full object-cover"
                   />
                 ) : (

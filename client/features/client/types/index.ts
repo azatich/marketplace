@@ -57,5 +57,49 @@ export interface ProductFilters {
   limit?: number;
 }
 
+interface Address {
+  id: string;
+  value: string;
+}
+
+export interface OrderRequest {
+  items: {
+    product_id: string;
+    quantity: number;
+    price: number;
+  }[];
+  shipping_address: Address
+  total_price: number;
+  payment_method: string;
+}
+
+export type OrderStatus = 'pending' | 'paid' | 'shipped' | 'delivered' | 'cancelled';
+export type OrderItemStatus = 'processing' | 'shipped' | 'delivered' | 'cancelled';
+
+export interface OrderProduct {
+  title: string;
+  images: string[];
+}
+
+export interface OrderItem {
+  id: string;
+  product_id: string;
+  quantity: number;
+  price_at_purchase: number;
+  status: OrderItemStatus;
+  products: OrderProduct;
+}
+
+export interface Order {
+  id: string;
+  created_at: string;
+  total_price: number;
+  status: OrderStatus;
+  shipping_address: {
+    value: string;
+  };
+  order_items: OrderItem[];
+}
+
 export { ProductCategories };
 
