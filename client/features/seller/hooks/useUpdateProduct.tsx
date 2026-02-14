@@ -4,8 +4,8 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import { showErrorToast, showSuccessToast } from "@/lib/toasts";
-import { ProductItem, UpdatedProductItem } from "../types";
+import { showErrorToast, } from "@/lib/toasts";
+import { UpdatedProductItem } from "../types";
 
 export const useUpdateProduct = (
   options?: UseMutationOptions<any, any, UpdatedProductItem>

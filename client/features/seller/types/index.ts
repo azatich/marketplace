@@ -169,7 +169,7 @@ export interface AddProductRequest {
   visibility?: boolean;
 }
 
-export interface IProductItem {
+export interface ProductItem {
   id: string;
   seller_id: string;
   title: string;

@@ -22,6 +22,8 @@ export const useProducts = (filters?: ProductFilters) => {
       const res = await api.get(`/client/products?${params.toString()}`);
       return res.data as ProductsResponse;
     },
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 };
 

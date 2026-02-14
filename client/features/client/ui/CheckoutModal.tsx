@@ -50,7 +50,7 @@ const CheckoutModal = ({
         (a: any) => a.id === selectedAddress,
       ) || { value: selectedAddress };
 
-      await api.post("/orders", {
+      const newOrder = {
         items: cartItems.map((item) => ({
           product_id: item.productId,
           quantity: item.quantity,
@@ -59,7 +59,12 @@ const CheckoutModal = ({
         shipping_address: addressData,
         total_price: totalAmount,
         payment_method: "card_online",
-      });
+      }
+
+      console.log('Заказ', newOrder);
+      
+
+      await api.post("/order/create-order", newOrder);
 
       setStep("success");
       clearCart();
