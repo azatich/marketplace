@@ -7,6 +7,7 @@ import authRouter from "./routes/auth";
 import adminRouter from "./routes/admin.js";
 import sellerRouter from "./routes/seller.js";
 import clientRouter from "./routes/client.js";
+import orderRouter from "./routes/order.js";
 
 
 dotenv.config();
@@ -34,6 +35,7 @@ app.use("/api/auth", authRouter);
 app.use('/api/users', adminRouter)
 app.use('/api/seller', sellerRouter)
 app.use('/api/client', clientRouter)
+app.use('/api/order', orderRouter)
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
