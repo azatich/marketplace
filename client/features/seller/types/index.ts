@@ -198,3 +198,34 @@ export interface UpdatedProductItem {
   visibility: boolean;
 }
 
+export type OrderItemStatus = 'processing' | 'shipped' | 'delivered' | 'cancelled';
+
+export interface SellerOrderItem {
+  id: string;
+  order_id: string;
+  product_id: string;
+  quantity: number;
+  price_at_purchase: number;
+  status: OrderItemStatus;
+  created_at: string;
+  
+  products: {
+    title: string;
+    images: string[];
+  };
+  
+  orders: {
+    shipping_address: { value: string };
+    status: string; // Глобальный статус оплаты чека
+    created_at: string;
+    users: {
+      first_name: string | null;
+      last_name: string | null;
+      email: string;
+      customers: {
+        phone: string | null;
+      }[];
+    };
+  };
+}
+

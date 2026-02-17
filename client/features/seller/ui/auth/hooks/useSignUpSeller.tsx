@@ -1,6 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import React from "react";
-import { api } from "../../../lib/api";
+import { api } from "../../../../../lib/api";
 import { SellerFormData } from "../types";
 import { toast } from "sonner";
 

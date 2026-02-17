@@ -33,7 +33,7 @@ const OrdersPage = () => {
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="flex flex-col items-center justify-center py-24 px-4 text-center border border-dashed border-white/10 rounded-3xl bg-white/5"
+        className="flex flex-col items-center justify-center py-24 px-4 text-center"
       >
         <div className="w-20 h-20 bg-[#1A1F2E] rounded-full flex items-center justify-center mb-6 shadow-xl border border-white/5">
           <Package className="w-10 h-10 text-[#8B7FFF]" />
@@ -53,7 +53,7 @@ const OrdersPage = () => {
   }
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="space-y-6 max-w-4xl mx-auto pt-4 pb-12">
       <motion.div 
         initial={{ opacity: 0, y: -10 }} 
         animate={{ opacity: 1, y: 0 }}
@@ -62,19 +62,8 @@ const OrdersPage = () => {
         <p className="text-[#A0AEC0]">История ваших покупок и статусы доставки</p>
       </motion.div>
 
-      {/* Обертка для анимации списка (Stagger) */}
       <motion.div 
-        className="space-y-6"
-        initial="hidden"
-        animate="visible"
-        variants={{
-          hidden: { opacity: 0 },
-          visible: {
-            opacity: 1,
-            transition: { staggerChildren: 0.1 } // Задержка появления каждой карточки
-          }
-        }}
-      >
+        className="space-y-6">
         {orders.map((order) => (
           <OrderCard key={order.id} order={order} />
         ))}

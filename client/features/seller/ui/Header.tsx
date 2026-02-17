@@ -4,7 +4,7 @@ import { Search, Bell, ChevronDown, User } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useLogout } from "@/features/auth";
+import { useLogout } from "@/features/seller/ui/auth";
 import { useSellerProfile } from "../hooks/useSellerProfile";
 
 export function Header() {

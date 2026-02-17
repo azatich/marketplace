@@ -1,13 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Search, Grid, List, Filter, X } from "lucide-react";
-import { useProducts } from "@/features/client/hooks/useProducts";
-import { Product, ProductCategories, ProductFilters } from "@/features/client/types";
+import { Search, Grid, List, Filter, X, Loader2 } from "lucide-react";
+// Убрал useProducts, так как используем useProductsInfinite
+import {
+  Product,
+  ProductCategories,
+  ProductFilters,
+} from "@/features/client/types";
 import { useRouter } from "next/navigation";
 import { ProductCard, useCartStore } from "@/features/client";
 import { ProductListItem } from "@/features/client/ui/ProductListItem";
+import { useProductsInfinite } from "@/features/client/hooks/useInfiniteScroll";
+import { useInView } from "react-intersection-observer";
 
 const CatalogPage = () => {
   const router = useRouter();
@@ -15,35 +21,84 @@ const CatalogPage = () => {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<ProductFilters>({
-    page: 1,
-    limit: 20, 
+    // Убрали page и limit отсюда, ими управляет useInfiniteQuery
   });
 
-  const { data, isLoading } = useProducts(filters);
+  // 1. ИСПРАВЛЕНИЕ: Передаем filters в хук, чтобы запросы уходили с нужными параметрами
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, status } =
+    useProductsInfinite(filters);
+
+  const { ref, inView } = useInView({
+    threshold: 0,
+    rootMargin: "200px",
+  });
+
+  useEffect(() => {
+    if (inView && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const handleSearch = (search: string) => {
-    setFilters((prev) => ({ ...prev, search, page: 1 }));
+    setFilters((prev) => ({ ...prev, search })); // page сбросится автоматически хуком
   };
 
   const handleFilterChange = (key: keyof ProductFilters, value: any) => {
-    setFilters((prev) => ({ ...prev, [key]: value, page: 1 }));
+    setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleSortChange = (sortBy: "price" | "created_at" | "discount", order: "asc" | "desc") => {
+  const handleSortChange = (
+    sortBy: "price" | "created_at" | "discount",
+    order: "asc" | "desc",
+  ) => {
     setFilters((prev) => ({ ...prev, sortBy, sortOrder: order }));
   };
 
   const clearFilters = () => {
-    setFilters({ page: 1, limit: 20 });
+    setFilters({}); // Полный сброс фильтров
   };
 
   const handleAddToCart = (product: Product) => {
     addToCart(product, 1);
   };
 
+  if (status === "error") {
+    return (
+      <div className="text-red-500 text-center py-20">
+        Ошибка загрузки товаров
+      </div>
+    );
+  }
+
+  // Вспомогательная функция, чтобы не писать двойной map дважды
+  const renderProducts = (mode: "grid" | "list") => {
+    return data?.pages.map((page, pageIndex) => (
+      <React.Fragment key={pageIndex}>
+        {/* 2. ИСПРАВЛЕНИЕ: Итерируемся по массиву products внутри каждой страницы */}
+        {page.products.map((product: Product) =>
+          mode === "grid" ? (
+            <ProductCard
+              key={product.id}
+              product={product}
+              onAddToCart={handleAddToCart}
+              onClick={() => router.push(`/product/${product.id}`)}
+            />
+          ) : (
+            // 3. ИСПРАВЛЕНИЕ: Убрана опечатка 'a('
+            <ProductListItem
+              key={product.id}
+              product={product}
+              onAddToCart={handleAddToCart}
+              onClick={() => router.push(`/product/${product.id}`)}
+            />
+          ),
+        )}
+      </React.Fragment>
+    ));
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -77,9 +132,7 @@ const CatalogPage = () => {
           >
             <Filter className="w-4 h-4" />
             Фильтры
-            {showFilters && (
-              <X className="w-4 h-4 ml-2" />
-            )}
+            {showFilters && <X className="w-4 h-4 ml-2" />}
           </motion.button>
 
           <div className="flex items-center gap-2">
@@ -91,11 +144,27 @@ const CatalogPage = () => {
               }}
               className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#8B7FFF]/50"
             >
-              <option className="bg-[#1A1F2E] text-white" value="created_at-desc">По новизне (новые)</option>
-              <option className="bg-[#1A1F2E] text-white" value="created_at-asc">По новизне (старые)</option>
-              <option className="bg-[#1A1F2E] text-white" value="price-asc">По цене (возрастание)</option>
-              <option className="bg-[#1A1F2E] text-white" value="price-desc">По цене (убывание)</option>
-              <option className="bg-[#1A1F2E] text-white" value="discount-desc">По размеру скидки</option>
+              <option
+                className="bg-[#1A1F2E] text-white"
+                value="created_at-desc"
+              >
+                По новизне (новые)
+              </option>
+              <option
+                className="bg-[#1A1F2E] text-white"
+                value="created_at-asc"
+              >
+                По новизне (старые)
+              </option>
+              <option className="bg-[#1A1F2E] text-white" value="price-asc">
+                По цене (возрастание)
+              </option>
+              <option className="bg-[#1A1F2E] text-white" value="price-desc">
+                По цене (убывание)
+              </option>
+              <option className="bg-[#1A1F2E] text-white" value="discount-desc">
+                По размеру скидки
+              </option>
             </select>
 
             <div className="flex items-center gap-1 bg-white/5 border border-white/10 rounded-lg p-1">
@@ -150,10 +219,14 @@ const CatalogPage = () => {
               </label>
               <select
                 value={filters.category || ""}
-                onChange={(e) => handleFilterChange("category", e.target.value || undefined)}
+                onChange={(e) =>
+                  handleFilterChange("category", e.target.value || undefined)
+                }
                 className="w-full h-10 px-3 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#8B7FFF]/50"
               >
-                <option className="bg-[#1A1F2E]" value="">Все категории</option>
+                <option className="bg-[#1A1F2E]" value="">
+                  Все категории
+                </option>
                 {Object.entries(ProductCategories).map(([key, value]) => (
                   <option key={key} value={key} className="bg-[#1A1F2E]">
                     {value.title}
@@ -170,12 +243,19 @@ const CatalogPage = () => {
                 </label>
                 <select
                   value={filters.subcategory || ""}
-                  onChange={(e) => handleFilterChange("subcategory", e.target.value || undefined)}
+                  onChange={(e) =>
+                    handleFilterChange(
+                      "subcategory",
+                      e.target.value || undefined,
+                    )
+                  }
                   className="w-full h-10 px-3 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#8B7FFF]/50"
                 >
                   <option value="">Все подкатегории</option>
                   {Object.entries(
-                    ProductCategories[filters.category as keyof typeof ProductCategories]?.children || {}
+                    ProductCategories[
+                      filters.category as keyof typeof ProductCategories
+                    ]?.children || {},
                   ).map(([key, value]) => (
                     <option key={key} value={key} className="bg-[#1A1F2E]">
                       {value}
@@ -195,7 +275,10 @@ const CatalogPage = () => {
                 placeholder="0"
                 value={filters.minPrice || ""}
                 onChange={(e) =>
-                  handleFilterChange("minPrice", e.target.value ? parseFloat(e.target.value) : undefined)
+                  handleFilterChange(
+                    "minPrice",
+                    e.target.value ? parseFloat(e.target.value) : undefined,
+                  )
                 }
                 className="w-full h-10 px-3 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder:text-[#A0AEC0] focus:outline-none focus:ring-2 focus:ring-[#8B7FFF]/50"
               />
@@ -210,7 +293,10 @@ const CatalogPage = () => {
                 placeholder="∞"
                 value={filters.maxPrice || ""}
                 onChange={(e) =>
-                  handleFilterChange("maxPrice", e.target.value ? parseFloat(e.target.value) : undefined)
+                  handleFilterChange(
+                    "maxPrice",
+                    e.target.value ? parseFloat(e.target.value) : undefined,
+                  )
                 }
                 className="w-full h-10 px-3 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder:text-[#A0AEC0] focus:outline-none focus:ring-2 focus:ring-[#8B7FFF]/50"
               />
@@ -223,73 +309,55 @@ const CatalogPage = () => {
               type="checkbox"
               id="hasDiscount"
               checked={filters.hasDiscount || false}
-              onChange={(e) => handleFilterChange("hasDiscount", e.target.checked || undefined)}
+              onChange={(e) =>
+                handleFilterChange("hasDiscount", e.target.checked || undefined)
+              }
               className="w-4 h-4 rounded bg-white/5 border-white/10 text-[#8B7FFF] focus:ring-[#8B7FFF]/50"
             />
-            <label htmlFor="hasDiscount" className="text-sm text-[#A0AEC0] cursor-pointer">
+            <label
+              htmlFor="hasDiscount"
+              className="text-sm text-[#A0AEC0] cursor-pointer"
+            >
               Только товары со скидкой
             </label>
           </div>
         </motion.div>
       )}
-
-      {/* Products Grid/List */}
-      {isLoading ? (
-        <div className="flex items-center justify-center h-64">
-          <div className="text-[#A0AEC0]">Загрузка...</div>
+      {status === "pending" ? (
+        <div className="flex flex-col items-center justify-center h-64">
+          <Loader2 className="w-8 h-8 animate-spin text-[#8B7FFF] mb-4" />
+          <div className="text-[#A0AEC0]">Загрузка каталога...</div>
         </div>
-      ) : data?.products.length === 0 ? (
+      ) : data?.pages[0]?.products.length === 0 ? (
         <div className="text-center py-16">
-          <p className="text-[#A0AEC0] text-lg">Товары не найдены</p>
+          <p className="text-[#A0AEC0] text-lg">
+            По вашему запросу товары не найдены
+          </p>
+          <button
+            onClick={clearFilters}
+            className="mt-4 text-[#8B7FFF] hover:underline"
+          >
+            Сбросить фильтры
+          </button>
         </div>
       ) : (
         <>
           {viewMode === "grid" ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
-              {data?.products.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  onAddToCart={handleAddToCart}
-                  onClick={() => router.push(`/product/${product.id}`)}
-                />
-              ))}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+              {renderProducts("grid")}
             </div>
           ) : (
-            <div className="space-y-4">
-              {data?.products.map((product) => (
-                <ProductListItem
-                  key={product.id}
-                  product={product}
-                  onAddToCart={handleAddToCart}
-                  onClick={() => router.push(`/product/${product.id}`)}
-                />
-              ))}
-            </div>
+            <div className="space-y-4">{renderProducts("list")}</div>
           )}
 
-          {/* Pagination */}
-          {data && data.pagination.total > data.pagination.limit && (
-            <div className="flex items-center justify-center gap-2 mt-8">
-              <button
-                onClick={() => setFilters((prev) => ({ ...prev, page: (prev.page || 1) - 1 }))}
-                disabled={filters.page === 1}
-                className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white/10 transition-colors"
-              >
-                Назад
-              </button>
-              <span className="text-[#A0AEC0]">
-                Страница {filters.page} из {Math.ceil(data.pagination.total / data.pagination.limit)}
-              </span>
-              <button
-                onClick={() => setFilters((prev) => ({ ...prev, page: (prev.page || 1) + 1 }))}
-                disabled={filters.page! >= Math.ceil(data.pagination.total / data.pagination.limit)}
-                className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white/10 transition-colors"
-              >
-                Вперед
-              </button>
-            </div>
-          )}
+          <div
+            ref={ref}
+            className="w-full h-24 flex items-center justify-center mt-8"
+          >
+            {isFetchingNextPage && (
+              <Loader2 className="w-8 h-8 animate-spin text-[#8B7FFF]" />
+            )}
+          </div>
         </>
       )}
     </div>
@@ -297,4 +365,3 @@ const CatalogPage = () => {
 };
 
 export default CatalogPage;
-

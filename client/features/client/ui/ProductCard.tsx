@@ -36,6 +36,7 @@ export const ProductCard = ({
           src={product.images[0] || "/placeholder.jpg"}
           alt={product.title}
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+          loading="lazy"
         />
         {discount > 0 && (
           <div className="absolute top-2 right-2 bg-[#FF6B6B] text-white text-xs font-bold px-2 py-1 rounded">

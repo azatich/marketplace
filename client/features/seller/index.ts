@@ -2,9 +2,9 @@ export * from "./types";
 
 export { Sidebar } from "./ui/Sidebar";
 export { Header } from "./ui/Header";
-export { ProductItem } from "./ui/ProductItem";
-export { ProductsHeader } from "./ui/ProductsHeader";
-export { ProductsList } from "./ui/ProductsList";
+export { ProductItemComponent as ProductItem } from "./ui/products/ProductItem";
+export { ProductsHeader } from "./ui/products/ProductsHeader";
+export { ProductsList } from "./ui/products/ProductsList";
 
 export { useAddProduct } from "./hooks/useAddProduct";
 export { useDeleteMutation } from "./hooks/useDeleteMutation";

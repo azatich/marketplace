@@ -59,7 +59,7 @@ const CheckoutModal = ({
       onSuccess: () => {
         clearCart(); // Очищаем корзину
         onClose(); // Закрываем модалку
-        router.push("/profile?tab=orders"); // Перенаправляем клиента к его заказам
+        router.push("/orders"); // Перенаправляем клиента к его заказам
       },
     });
   };

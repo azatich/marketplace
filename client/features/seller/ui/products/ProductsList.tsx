@@ -1,8 +1,8 @@
 "use client";
 
 import { Spinner } from "@/components/ui/spinner";
-import { useProductsQuery } from "../hooks/useProductsQuery";
-import { ProductItem } from "./ProductItem";
+import { useProductsQuery } from "../../hooks/useProductsQuery";
+import { ProductItemComponent } from "./ProductItem";
 
 export const ProductsList = () => {
   const { data: products, isPending } = useProductsQuery();
@@ -18,7 +18,7 @@ export const ProductsList = () => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {products?.map((product) => (
-        <ProductItem key={product.id} product={product} />
+        <ProductItemComponent key={product.id} product={product} />
       ))}
     </div>
   );

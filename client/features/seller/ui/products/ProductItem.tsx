@@ -10,13 +10,13 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { useToggleVisibility } from "../hooks/useToggleVisibility";
-import { useDeleteMutation } from "../hooks/useDeleteMutation";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { IProductItem } from "../types";
+import { useToggleVisibility } from "../../hooks/useToggleVisibility";
+import { useDeleteMutation } from "../../hooks/useDeleteMutation";
+import { ProductItem } from "../../types";
 
-export const ProductItem = ({ product }: { product: IProductItem }) => {
+export const ProductItemComponent = ({ product }: { product: ProductItem }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const { mutate: toggleVisibility, isPending: isPendingToggleVisibility } =
     useToggleVisibility();

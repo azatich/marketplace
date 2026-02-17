@@ -1,4 +1,4 @@
-import { LoginForm } from '@/features/auth'
+import { LoginForm } from '@/features/seller/ui/auth'
 import React from 'react'
 
 const LoginPage = () => {

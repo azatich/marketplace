@@ -1,7 +1,7 @@
 'use client'
 
 import { useMutation } from "@tanstack/react-query";
-import { api } from "../../../lib/api";
+import { api } from "../../../../../lib/api";
 import { useRouter } from "next/navigation";
 import { showErrorToast, showSuccessToast } from "@/lib/toasts";
 
