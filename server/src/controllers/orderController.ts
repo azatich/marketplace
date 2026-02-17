@@ -42,12 +42,10 @@ export class OrderController {
         .single();
 
       if (orderError || !orderData) {
-        return res
-          .status(500)
-          .json({
-            message: "Ошибка при создании заказа",
-            error: orderError?.message,
-          });
+        return res.status(500).json({
+          message: "Ошибка при создании заказа",
+          error: orderError?.message,
+        });
       }
 
       // 2. Получаем массив ID всех товаров из корзины
@@ -62,12 +60,10 @@ export class OrderController {
       if (productsError || !productsData) {
         // В идеале здесь нужно удалить созданный orderData, так как процесс прервался
         await supabase.from("orders").delete().eq("id", orderData.id);
-        return res
-          .status(500)
-          .json({
-            message: "Ошибка при получении данных о товарах",
-            error: productsError?.message,
-          });
+        return res.status(500).json({
+          message: "Ошибка при получении данных о товарах",
+          error: productsError?.message,
+        });
       }
 
       // 4. Формируем массив для вставки в order_items
@@ -101,12 +97,10 @@ export class OrderController {
       if (itemsError) {
         // Откат: если товары не добавились, удаляем шапку заказа
         await supabase.from("orders").delete().eq("id", orderData.id);
-        return res
-          .status(500)
-          .json({
-            message: "Ошибка при сохранении товаров заказа",
-            error: itemsError.message,
-          });
+        return res.status(500).json({
+          message: "Ошибка при сохранении товаров заказа",
+          error: itemsError.message,
+        });
       }
 
       return res.status(201).json({
@@ -159,15 +153,81 @@ export class OrderController {
         .order("created_at", { ascending: false });
 
       if (error) {
-        return res
-          .status(500)
-          .json({
-            message: "Ошибка при получении заказов",
-            error: error.message,
-          });
+        return res.status(500).json({
+          message: "Ошибка при получении заказов",
+          error: error.message,
+        });
       }
 
       return res.status(200).json(data);
-    } catch (error) {}
+    } catch (error) {
+      console.error("Get Client Orders Error:", error);
+    }
+  }
+
+  static async getSellerOrders(req: Request, res: Response) {
+    try {
+      const token = req.cookies.token;
+
+      if (!token) {
+        return res.status(401).json({ message: "Неавторизован" });
+      }
+
+      const payload = JWTUtils.verify(token);
+
+      if (!payload) {
+        return res.status(403).json({ message: "Неавторизован" });
+      }
+
+      if (payload.role !== UserRole.SELLER) {
+        return res.status(403).json({ message: "Доступ запрещен" });
+      }
+
+      const { data, error } = await supabase
+        .from("order_items")
+        .select(`
+          id,
+          order_id,
+          product_id,
+          quantity,
+          price_at_purchase,
+          status,
+          created_at,
+
+          products (
+            title,
+            images
+          ),
+
+          orders (
+            shipping_address,
+            status,
+            created_at,
+
+            users (
+              first_name,
+              last_name,
+              email,
+              
+              customers (
+                phone
+              )
+            ) 
+          )
+        `)
+        .eq("seller_id", payload.userId)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        return res.status(500).json({
+          message: "Ошибка при получении заказов",
+          error: error.message,
+        });
+      }
+
+      return res.status(200).json(data);
+    } catch (error) {
+      console.error("Get Seller Orders Error:", error);
+    }
   }
 }
