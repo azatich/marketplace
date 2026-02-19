@@ -4,7 +4,7 @@ import { ProductItem } from "../types";
 
 export const useSingleProduct = (productId: string) => {
   return useQuery<ProductItem>({
-    queryKey: ["seller-single-product", productId],
+    queryKey: ["seller-products", productId],
     queryFn: async () => {
       const res = await api.get(`/seller/products/${productId}`);
       return res.data;

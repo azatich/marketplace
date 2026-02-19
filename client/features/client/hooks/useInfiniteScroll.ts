@@ -1,6 +1,5 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import { Product } from "../types";
 
 interface Pagination {
   page: number;

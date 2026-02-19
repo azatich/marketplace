@@ -12,6 +12,7 @@ export const OrderCard = ({ order }: { order: Order }) => {
     hour: "2-digit",
     minute: "2-digit",
   }).format(new Date(order.created_at));
+  
 
   const shortId = order.id.split("-").pop()?.toUpperCase();
 
@@ -33,7 +34,7 @@ export const OrderCard = ({ order }: { order: Order }) => {
         <div className="flex flex-col sm:items-end w-full sm:w-auto gap-1">
           <span className="text-sm text-[#A0AEC0]">Сумма заказа</span>
           <span className="text-2xl font-bold bg-linear-to-r from-[#8B7FFF] to-[#6DD5ED] bg-clip-text text-transparent">
-            ${order.total_price.toFixed(2)}
+            ₸{order.total_price.toFixed(2)}
           </span>
         </div>
       </div>

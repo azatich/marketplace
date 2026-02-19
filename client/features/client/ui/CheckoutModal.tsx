@@ -161,7 +161,7 @@ const CheckoutModal = ({
                 <div className="flex justify-between items-center pt-4 border-t border-white/10">
                   <span className="text-[#A0AEC0]">К оплате:</span>
                   <span className="text-2xl font-bold text-white">
-                    ${totalAmount.toFixed(2)}
+                    ₸{totalAmount.toFixed(2)}
                   </span>
                 </div>
 

@@ -9,6 +9,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Users,
+  MessageCircle,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { usePathname, useRouter } from "next/navigation";
@@ -34,16 +35,16 @@ const navItems = [
     href: "/seller/orders",
   },
   {
-    id: "analytics",
-    label: "Аналитика",
-    icon: BarChart3,
-    href: "/seller/analytics",
-  },
-  {
     id: "settings",
     label: "Настройки",
     icon: Settings,
     href: "/seller/settings",
+  },
+  {
+    id: "chats",
+    label: "Чаты",
+    icon: MessageCircle,
+    href: "/seller/chats",
   },
 ];
 export const Sidebar = ({

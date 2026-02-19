@@ -219,6 +219,7 @@ export interface SellerOrderItem {
     status: string; // Глобальный статус оплаты чека
     created_at: string;
     users: {
+      id: string;
       first_name: string | null;
       last_name: string | null;
       email: string;
