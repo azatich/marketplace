@@ -6,11 +6,10 @@ import { api } from "@/lib/api";
 // Экспортируем интерфейс, чтобы использовать его в UI компоненте
 export interface ChatPreview {
   id: string;
-  client: {
-    first_name: string;
-    last_name: string;
-    avatar?: string;
-  };
+  displayInfo: {
+    full_name: string,
+    avatar_url: string | null,
+  },
   lastMessage: {
     text: string;
     created_at: string;

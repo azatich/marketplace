@@ -18,7 +18,8 @@ export const useChatSocket = (chatId: string) => {
   const [companionId, setCompanionId] = useState<string | null>(null);
   const [isCompanionOnline, setIsCompanionOnline] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  
+  const [isCompanionTyping, setIsCompanionTyping] = useState(false);
+
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
@@ -33,9 +34,12 @@ export const useChatSocket = (chatId: string) => {
           setIsLoading(false);
         }
 
-        socketRef.current = io(process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000", {
-          withCredentials: true, // Передает куки с JWT токеном
-        });
+        socketRef.current = io(
+          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000",
+          {
+            withCredentials: true, // Передает куки с JWT токеном
+          },
+        );
 
         const socket = socketRef.current;
 
@@ -46,7 +50,14 @@ export const useChatSocket = (chatId: string) => {
           }
         });
 
+        socket.on("user_typing", ({ userId, isTyping }) => {
+          if (userId === res.data.companionId) {
+            setIsCompanionTyping(isTyping);
+          }
+        });
+
         socket.on("receive_message", (newMessage: Message) => {
+          setIsCompanionTyping(false);
           setMessages((prev) => {
             const isDuplicate = prev.some((msg) => msg.id === newMessage.id);
 
@@ -54,15 +65,17 @@ export const useChatSocket = (chatId: string) => {
               return prev;
             }
 
-            return [...prev, newMessage]
+            return [...prev, newMessage];
           });
         });
 
         socket.on("messages_read", () => {
           setMessages((prev) =>
             prev.map((msg) =>
-              msg.sender_id !== res.data.companionId ? { ...msg, is_read: true } : msg
-            )
+              msg.sender_id !== res.data.companionId
+                ? { ...msg, is_read: true }
+                : msg,
+            ),
           );
         });
 
@@ -87,17 +100,41 @@ export const useChatSocket = (chatId: string) => {
     };
   }, [chatId]);
 
-  const sendMessage = useCallback((text: string) => {
-    if (socketRef.current && text.trim()) {
-      socketRef.current.emit("send_message", { chatId, text });
-    }
-  }, [chatId]);
+  const sendTypingStatus = useCallback(
+    (isTyping: boolean) => {
+      if (socketRef.current) {
+        socketRef.current.emit("typing", { chatId, isTyping });
+      }
+    },
+    [chatId],
+  );
 
-  const markAsRead = useCallback((messageId: string) => {
-    if (socketRef.current) {
-      socketRef.current.emit("mark_as_read", messageId, chatId);
-    }
-  }, [chatId]);
+  const sendMessage = useCallback(
+    (text: string) => {
+      if (socketRef.current && text.trim()) {
+        socketRef.current.emit("send_message", { chatId, text });
+      }
+    },
+    [chatId],
+  );
 
-  return { messages, isCompanionOnline, isLoading, sendMessage, markAsRead, companionId };
+  const markAsRead = useCallback(
+    (messageId: string) => {
+      if (socketRef.current) {
+        socketRef.current.emit("mark_as_read", messageId, chatId);
+      }
+    },
+    [chatId],
+  );
+
+  return {
+    messages,
+    isCompanionOnline,
+    isLoading,
+    isCompanionTyping,
+    sendTypingStatus,
+    sendMessage,
+    markAsRead,
+    companionId,
+  };
 };

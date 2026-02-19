@@ -168,12 +168,12 @@ const CartPage = () => {
                         </h3>
                         <div className="flex items-center gap-2">
                           <span className="text-lg font-bold text-white">
-                            ${finalPrice.toFixed(2)}
+                            ₸{finalPrice.toFixed(2)}
                           </span>
                           {item.product.discount_price && (
                             <>
                               <span className="text-sm text-[#A0AEC0] line-through">
-                                ${item.product.price.toFixed(2)}
+                                ₸{item.product.price.toFixed(2)}
                               </span>
                               <span className="text-xs bg-[#FF6B6B]/20 text-[#FF6B6B] px-2 py-0.5 rounded">
                                 -{discount}%
@@ -215,7 +215,7 @@ const CartPage = () => {
                       </div>
                       <div className="flex-1 text-right">
                         <p className="text-lg font-semibold">
-                          ${(finalPrice * item.quantity).toFixed(2)}
+                          ₸{(finalPrice * item.quantity).toFixed(2)}
                         </p>
                         {exceedsStock && (
                           <p className="text-xs text-[#FF6B6B] mt-1">
@@ -248,7 +248,7 @@ const CartPage = () => {
             <div className="space-y-4 mb-6">
               <div className="flex justify-between text-[#A0AEC0]">
                 <span>Сумма товаров</span>
-                <span>${subtotal.toFixed(2)}</span>
+                <span>₸{subtotal.toFixed(2)}</span>
               </div>
               {totalDiscount > 0 && (
                 <div className="flex justify-between text-[#FF6B6B]">
@@ -263,7 +263,7 @@ const CartPage = () => {
               <div className="border-t border-white/10 pt-4">
                 <div className="flex justify-between text-xl font-bold">
                   <span>К оплате</span>
-                  <span>${finalTotal.toFixed(2)}</span>
+                  <span>₸{finalTotal.toFixed(2)}</span>
                 </div>
               </div>
             </div>

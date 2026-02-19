@@ -43,7 +43,7 @@ export function Header() {
           </div>
 
           {/* Notifications */}
-          <div className="relative">
+          {/* <div className="relative">
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -99,7 +99,7 @@ export function Header() {
                 </div>
               </motion.div>
             )}
-          </div>
+          </div> */}
 
           {/* User Menu */}
           <div className="relative">

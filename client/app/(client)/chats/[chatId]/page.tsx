@@ -5,48 +5,49 @@ import { motion } from "framer-motion";
 import {
   Send,
   ArrowLeft,
-  User,
+  Store,
   Loader2,
   Check,
   CheckCheck,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useSellerProfile } from "@/features/seller";
+import { useClientProfile } from "@/features/client/hooks/useClientProfile";
 import { useChatSocket } from "@/features/chat/hooks/useChatSocket";
 import { useSellerChats } from "@/features/seller/hooks/useSellerChats";
 
-export default function SellerChatPage({
+export default function ClientChatPage({
   params,
 }: {
   params: Promise<{ chatId: string }>;
 }) {
   const router = useRouter();
-  const resolvedParams = use(params);
-  const { chatId } = resolvedParams;
 
-  const { data: profile } = useSellerProfile();
+  const resolvedParams = use(params);
+  const chatId = resolvedParams.chatId;
+
+  const { data: profile } = useClientProfile();
   const currentUserId = profile?.id;
 
-  // 1. Получаем список всех чатов
   const { data: chats = [] } = useSellerChats();
-
-  // 2. Находим текущий чат в списке, чтобы достать данные клиента (имя и аватар)
   const currentChat = chats.find((c) => c.id === chatId);
-
-  const [inputValue, setInputValue] = useState("");
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const displayInfo = currentChat?.displayInfo;
 
   const {
     messages,
     isCompanionOnline,
     isLoading,
     sendMessage,
-    isCompanionTyping,
+    markAsRead,
     sendTypingStatus,
+    isCompanionTyping,
   } = useChatSocket(chatId);
 
-  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [inputValue, setInputValue] = useState("");
 
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Скролл вниз
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -54,6 +55,13 @@ export default function SellerChatPage({
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  useEffect(() => {
+    const unread = messages.filter(
+      (m) => m.sender_id !== currentUserId && !m.is_read,
+    );
+    unread.forEach((m) => markAsRead(m.id));
+  }, [messages, currentUserId, markAsRead]);
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,7 +92,7 @@ export default function SellerChatPage({
 
   return (
     <div className="max-w-4xl mx-auto h-[calc(100vh-120px)] min-h-[500px] flex flex-col bg-[#1A1F2E]/80 backdrop-blur-xl border border-white/5 rounded-2xl overflow-hidden shadow-2xl">
-      {/* 1. ШАПКА ЧАТА (Продавец видит Клиента) */}
+      {/* 1. ШАПКА ЧАТА (Данные магазина) */}
       <div className="flex items-center gap-4 p-4 sm:p-6 border-b border-white/5 bg-white/[0.02]">
         <button
           onClick={() => router.back()}
@@ -93,26 +101,22 @@ export default function SellerChatPage({
           <ArrowLeft className="w-5 h-5" />
         </button>
 
-        {/* Аватар клиента */}
-        <div className="w-10 h-10 rounded-full overflow-hidden shrink-0 border border-white/10 bg-white/5">
-          {currentChat?.displayInfo.avatar ? (
+        <div className="w-10 h-10 rounded-full overflow-hidden shrink-0 border border-[#8B7FFF]/30 bg-[#8B7FFF]/10 flex items-center justify-center">
+          {displayInfo?.avatar_url ? (
             <img
-              src={currentChat.displayInfo.avatar}
-              alt={currentChat.displayInfo.full_name}
+              src={displayInfo.avatar_url}
+              alt="Store"
               className="w-full h-full object-cover"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center bg-[#6DD5ED]/20">
-              <User className="w-5 h-5 text-[#6DD5ED]" />
-            </div>
+            <Store className="w-5 h-5 text-[#8B7FFF]" />
           )}
         </div>
 
         <div>
-          <h2 className="font-bold text-white">
-            {currentChat?.displayInfo.full_name}
+          <h2 className="font-bold text-white leading-tight">
+            {displayInfo?.full_name || "Загрузка..."}
           </h2>
-          {/* ... внутри блока с именем ... */}
           <div className="text-xs mt-0.5 h-4 flex items-center">
             {isCompanionTyping ? (
               <div className="flex items-center gap-1">
@@ -149,7 +153,6 @@ export default function SellerChatPage({
       </div>
 
       {/* 2. СПИСОК СООБЩЕНИЙ */}
-      {/* ... (Тут твой код без изменений) ... */}
       <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 bg-[#0f121b]">
         {messages.map((msg) => {
           const isMine = msg.sender_id === currentUserId;
@@ -166,7 +169,7 @@ export default function SellerChatPage({
               className={`flex flex-col ${isMine ? "items-end" : "items-start"}`}
             >
               <div
-                className={`max-w-[80%] sm:max-w-[65%] px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl text-sm sm:text-base shadow-sm ${
+                className={`max-w-[80%] sm:max-w-[65%] px-5 py-3 rounded-2xl text-sm sm:text-base shadow-sm ${
                   isMine
                     ? "bg-linear-to-br from-[#8B7FFF] to-[#6DD5ED] text-white rounded-tr-sm"
                     : "bg-[#1A1F2E] text-[#e2e8f0] border border-white/5 rounded-tl-sm"
@@ -192,7 +195,6 @@ export default function SellerChatPage({
       </div>
 
       {/* 3. ИНПУТ ВВОДА */}
-      {/* ... (Твой код без изменений) ... */}
       <form
         onSubmit={handleSend}
         className="p-4 sm:p-6 bg-[#1A1F2E] border-t border-white/5"
@@ -209,7 +211,7 @@ export default function SellerChatPage({
                 }
               }}
               rows={1}
-              placeholder="Написать сообщение..."
+              placeholder="Напишите сообщение..."
               className="w-full max-h-32 px-4 py-3 sm:py-4 bg-transparent text-white placeholder:text-[#A0AEC0] resize-none outline-none text-sm sm:text-base"
             />
           </div>

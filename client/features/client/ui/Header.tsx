@@ -67,6 +67,16 @@ export const Header = () => {
             >
               Заказы
             </Link>
+            <Link
+              href="/chats"
+              className={`relative text-sm ${
+                pathname === "/chats"
+                  ? "text-white"
+                  : "text-[#A0AEC0] hover:text-white"
+              }`}
+            >
+              Чаты
+            </Link>
           </nav>
 
           <div className="flex items-center gap-4">

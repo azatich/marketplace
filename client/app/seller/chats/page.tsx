@@ -28,8 +28,7 @@ export default function SellerChatsListPage() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const filteredChats = chats.filter((chat) => {
-    const fullName =
-      `${chat.client.first_name} ${chat.client.last_name}`.toLowerCase();
+    const fullName = chat.displayInfo.full_name.toLowerCase();
     return fullName.includes(searchQuery.toLowerCase());
   });
 
@@ -129,7 +128,7 @@ export default function SellerChatsListPage() {
           </div>
         ) : (
           filteredChats.map((chat) => {
-            const fullName = `${chat.client.first_name} ${chat.client.last_name}`;
+            const fullName = chat.displayInfo.full_name
             const isUnread = chat.unreadCount > 0;
 
             return (
@@ -145,8 +144,8 @@ export default function SellerChatsListPage() {
                   className="flex items-center gap-4 p-4 sm:p-5 hover:bg-white/[0.02] transition-colors group cursor-pointer"
                 >
                   {/* Аватар */}
-                  {chat.client.avatar ? (
-                    <img src={chat.client.avatar} alt="avatar" className="w-10 h-10 rounded-full" />
+                  {chat.displayInfo.avatar ? (
+                    <img src={chat.displayInfo.avatar} alt="avatar" className="w-10 h-10 rounded-full" />
                   ) : (
                     <User className="w-8 h-8 text-[#8B7FFF]" />
                   )}
