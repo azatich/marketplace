@@ -2,7 +2,6 @@ import { supabase } from "../server";
 import { Request, Response } from "express";
 import { JWTUtils } from "../utils/jwt";
 import { UserRole } from "../types";
-import { error } from "console";
 
 export class OrderController {
   static async createOrder(req: Request, res: Response) {
@@ -36,7 +35,7 @@ export class OrderController {
           shipping_address,
           total_price,
           payment_method,
-          status: "pending",
+          status: "paid",
         })
         .select()
         .single();
@@ -139,6 +138,7 @@ export class OrderController {
                 order_items(
                     id,
                     product_id,
+                    seller_id,
                     quantity,
                     price_at_purchase,
                     status,
@@ -185,7 +185,8 @@ export class OrderController {
 
       const { data, error } = await supabase
         .from("order_items")
-        .select(`
+        .select(
+          `
           id,
           order_id,
           product_id,
@@ -205,6 +206,7 @@ export class OrderController {
             created_at,
 
             users (
+              id,
               first_name,
               last_name,
               email,
@@ -214,7 +216,8 @@ export class OrderController {
               )
             ) 
           )
-        `)
+        `,
+        )
         .eq("seller_id", payload.userId)
         .order("created_at", { ascending: false });
 
@@ -229,5 +232,44 @@ export class OrderController {
     } catch (error) {
       console.error("Get Seller Orders Error:", error);
     }
+  }
+
+  static async updateOrderStatus(req: Request, res: Response) {
+    try {
+      const token = req.cookies.token;
+
+      if (!token) {
+        return res.status(401).json({ message: "Неавторизован" });
+      }
+
+      const payload = JWTUtils.verify(token);
+
+      if (!payload) {
+        return res.status(403).json({ message: "Неавторизован" });
+      }
+
+      if (payload.role !== UserRole.SELLER) {
+        return res.status(403).json({ message: "Доступ запрещен" });
+      }
+
+      const { id } = req.params;
+      const { status } = req.body;
+
+      const { error } = await supabase
+        .from("order_items")
+        .update({ status })
+        .eq("id", id);
+
+      if (error) {
+        return res.status(500).json({
+          message: "Ошибка при обновлении статуса заказа",
+          error: error.message,
+        });
+      }
+
+      return res
+        .status(200)
+        .json({ message: "Статус заказа успешно обновлен" });
+    } catch (error) {}
   }
 }
