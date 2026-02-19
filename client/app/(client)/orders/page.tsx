@@ -53,7 +53,7 @@ const OrdersPage = () => {
   }
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto pt-4 pb-12">
+    <div className="space-y-6 max-w-4xl px-4 mx-auto pt-4 pb-12">
       <motion.div 
         initial={{ opacity: 0, y: -10 }} 
         animate={{ opacity: 1, y: 0 }}

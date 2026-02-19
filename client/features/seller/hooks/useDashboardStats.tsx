@@ -17,6 +17,9 @@ export interface ChartDataPoint {
 }
 
 export interface DashboardStats {
+  totalRevenue: number;
+  totalOrders: number;
+  totalProducts: number;
   topProducts: TopProduct[];
   chartData: {
     Day: ChartDataPoint[];

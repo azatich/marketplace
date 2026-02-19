@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Search, Grid, List, Filter, X, Loader2 } from "lucide-react";
-// Убрал useProducts, так как используем useProductsInfinite
 import {
   Product,
   ProductCategories,
@@ -21,10 +20,8 @@ const CatalogPage = () => {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<ProductFilters>({
-    // Убрали page и limit отсюда, ими управляет useInfiniteQuery
   });
 
-  // 1. ИСПРАВЛЕНИЕ: Передаем filters в хук, чтобы запросы уходили с нужными параметрами
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, status } =
     useProductsInfinite(filters);
 
@@ -343,7 +340,7 @@ const CatalogPage = () => {
       ) : (
         <>
           {viewMode === "grid" ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
               {renderProducts("grid")}
             </div>
           ) : (
