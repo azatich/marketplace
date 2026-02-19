@@ -29,6 +29,8 @@ router.delete('/products/:id', SellerController.deleteProduct)
 router.put('/products/:id', SellerController.updateProduct)
 router.put('/profile', upload.single('avatar'), SellerController.updateProfile)
 
+router.get('/dashboard-stats', SellerController.getDashboardStats)
+
 
 
 export default router;

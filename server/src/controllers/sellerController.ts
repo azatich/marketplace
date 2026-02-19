@@ -176,7 +176,7 @@ export class SellerController {
 
       // Загружаем изображения в Supabase Storage
       const imageUrls: string[] = [];
-      
+
       for (const file of files) {
         const fileExt = file.originalname.split(".").pop();
         const fileName = `${Date.now()}-${Math.random()
@@ -209,7 +209,9 @@ export class SellerController {
 
         const {
           data: { publicUrl },
-        } = supabase.storage.from("product-images").getPublicUrl(uploadData.path);
+        } = supabase.storage
+          .from("product-images")
+          .getPublicUrl(uploadData.path);
 
         imageUrls.push(publicUrl);
       }
@@ -266,7 +268,7 @@ export class SellerController {
   static async updateProduct(req: Request, res: Response) {
     try {
       const token = req.cookies.token;
-      const { id: productId} = req.params;
+      const { id: productId } = req.params;
 
       if (!token) {
         return res.status(401).json({ message: "Неавторизован" });
@@ -509,13 +511,7 @@ export class SellerController {
         return res.status(403).json({ message: "Доступ запрещен" });
       }
 
-      const {
-        firstName,
-        lastName,
-        phone,
-        description,
-        password,
-      } = req.body;
+      const { firstName, lastName, phone, description, password } = req.body;
 
       // Получаем файл аватара из multer
       const avatarFile = req.file as Express.Multer.File | undefined;
@@ -587,7 +583,7 @@ export class SellerController {
         const {
           data: { publicUrl },
         } = supabase.storage.from("avatars").getPublicUrl(uploadData.path);
-        
+
         avatarUrl = publicUrl;
       }
 
@@ -661,6 +657,110 @@ export class SellerController {
         message: "Внутренняя ошибка сервера",
         error: error instanceof Error ? error.message : "Неизвестная ошибка",
       });
+    }
+  }
+
+  static async getDashboardStats(req: Request, res: Response) {
+    try {
+      const token = req.cookies.token;
+      if (!token) return res.status(401).json({ message: "Не авторизован" });
+      const payload = await JWTUtils.verify(token);
+      if (!payload) return res.status(401).json({ message: "Не авторизован" });
+
+      const sellerId = payload.userId;
+
+      const { data: orderItems, error } = await supabase
+        .from("order_items")
+        .select(
+          `
+          order_id,
+          quantity, 
+          price_at_purchase, 
+          created_at,
+          products (id, title, images)
+        `,
+        )
+        .eq("seller_id", sellerId);
+
+      if (error) throw error;
+      if (!orderItems)
+        return res.status(200).json({ chartData: {}, topProducts: [] });
+
+      const productStats: Record<string, any> = {};
+
+      orderItems.forEach((item: any) => {
+        const prod = item.products;
+        if (!prod) return;
+
+        if (!productStats[prod.id]) {
+          productStats[prod.id] = {
+            id: prod.id,
+            name: prod.title,
+            image: prod.images?.[0] || null,
+            sales: 0,
+            revenue: 0,
+          };
+        }
+        productStats[prod.id].sales += item.quantity;
+        productStats[prod.id].revenue += item.quantity * item.price_at_purchase;
+      });
+
+      let totalRevenue = 0;
+      const uniqueOrders = new Set(); // Используем Set, чтобы считать только уникальные заказы
+
+      orderItems.forEach((item: any) => {
+        totalRevenue += item.quantity * item.price_at_purchase;
+        if (item.order_id) {
+          uniqueOrders.add(item.order_id);
+        }
+      });
+
+      const { count: totalProducts, error: productsError } = await supabase
+        .from("products")
+        .select("id", { count: "exact", head: true }) // head: true означает, что мы просим БД вернуть только число, без самих данных (оптимизация)
+        .eq("seller_id", sellerId);
+
+      if (productsError) throw productsError;
+
+      const topProducts = Object.values(productStats)
+        .sort((a: any, b: any) => b.revenue - a.revenue)
+        .slice(0, 3);
+
+      const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      const weekData = weekDays.map((day) => ({ name: day, value: 0 }));
+
+      orderItems.forEach((item: any) => {
+        const date = new Date(item.created_at);
+        // Проверяем, что заказ был сделан за последние 7 дней
+        const now = new Date();
+        const diffTime = Math.abs(now.getTime() - date.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays <= 7) {
+          const dayName = weekDays[date.getDay()];
+          const dayObj = weekData.find((d) => d.name === dayName);
+          if (dayObj) {
+            dayObj.value += item.quantity * item.price_at_purchase; // Считаем доход (или можно считать количество)
+          }
+        }
+      });
+
+      return res.status(200).json({
+        totalRevenue,
+        totalOrders: uniqueOrders.size,
+        totalProducts: totalProducts || 0,
+        topProducts, // То, что мы делали ранее
+        chartData: {
+          // То, что мы делали ранее
+          Week: weekData,
+          Day: [],
+          Month: [],
+          Year: [],
+        },
+      });
+    } catch (error) {
+      console.error("Dashboard Stats Error:", error);
+      return res.status(500).json({ message: "Ошибка сервера" });
     }
   }
 }
