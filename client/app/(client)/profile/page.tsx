@@ -13,10 +13,9 @@ import {
   Trash2,
   Lock
 } from "lucide-react";
-import { showSuccessToast, showErrorToast } from "@/lib/toasts";
-import { useClientProfile } from "@/features/client/hooks/useClientProfile";
-import { useUpdateClientProfile } from "@/features/client/hooks/useUpdateClientProfile";
+import { showErrorToast } from "@/lib/toasts";
 import { InputField } from "@/features/client/ui/InputField";
+import { useClientProfile, useUpdateClientProfile } from "@/features/client";
 
 interface Address {
   id: string;

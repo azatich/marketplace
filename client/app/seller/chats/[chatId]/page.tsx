@@ -85,7 +85,7 @@ export default function SellerChatPage({
   return (
     <div className="max-w-4xl mx-auto h-[calc(100vh-120px)] min-h-[500px] flex flex-col bg-[#1A1F2E]/80 backdrop-blur-xl border border-white/5 rounded-2xl overflow-hidden shadow-2xl">
       {/* 1. ШАПКА ЧАТА (Продавец видит Клиента) */}
-      <div className="flex items-center gap-4 p-4 sm:p-6 border-b border-white/5 bg-white/[0.02]">
+      <div className="flex items-center gap-4 p-4 sm:p-6 border-b border-white/5 bg-white/2">
         <button
           onClick={() => router.back()}
           className="p-2 -ml-2 rounded-xl text-[#A0AEC0] hover:text-white hover:bg-white/5 transition-colors"
@@ -95,9 +95,9 @@ export default function SellerChatPage({
 
         {/* Аватар клиента */}
         <div className="w-10 h-10 rounded-full overflow-hidden shrink-0 border border-white/10 bg-white/5">
-          {currentChat?.displayInfo.avatar ? (
+          {currentChat?.displayInfo.avatar_url? (
             <img
-              src={currentChat.displayInfo.avatar}
+              src={currentChat.displayInfo.avatar_url}
               alt={currentChat.displayInfo.full_name}
               className="w-full h-full object-cover"
             />

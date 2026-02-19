@@ -84,16 +84,16 @@ export const Sidebar = ({
               exit={{ opacity: 0 }}
               className="flex items-center gap-3"
             >
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#8B7FFF] to-[#6DD5ED] flex items-center justify-center shadow-lg shadow-[#8B7FFF]/30">
+              <div className="w-10 h-10 rounded-lg bg-linear-to-br from-[#8B7FFF] to-[#6DD5ED] flex items-center justify-center shadow-lg shadow-[#8B7FFF]/30">
                 <Package className="w-6 h-6" />
               </div>
-              <span className="tracking-tight font-semibold text-white">
-                SellerHub
+              <span className="tracking-tight font-semibold text-white text-xl ">
+                MARKETPLACE
               </span>
             </motion.div>
           )}
           {collapsed && (
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#8B7FFF] to-[#6DD5ED] flex items-center justify-center shadow-lg shadow-[#8B7FFF]/30 mx-auto">
+            <div className="w-10 h-10 rounded-lg bg-linear-to-br from-[#8B7FFF] to-[#6DD5ED] flex items-center justify-center shadow-lg shadow-[#8B7FFF]/30 mx-auto">
               <Package className="w-6 h-6" />
             </div>
           )}
@@ -111,7 +111,7 @@ export const Sidebar = ({
                 onClick={() => handleNavigate(item.href)}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all relative group ${
                   active
-                    ? "bg-gradient-to-r from-[#8B7FFF]/20 to-[#6DD5ED]/20 text-white"
+                    ? "bg-linear-to-r from-[#8B7FFF]/20 to-[#6DD5ED]/20 text-white"
                     : "text-[#A0AEC0] hover:text-white hover:bg-white/5"
                 }`}
                 whileHover={{ scale: 1.02 }}
@@ -120,11 +120,11 @@ export const Sidebar = ({
                 {active && (
                   <motion.div
                     layoutId="activeTab"
-                    className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-[#8B7FFF] to-[#6DD5ED] rounded-r"
+                    className="absolute left-0 top-0 bottom-0 w-1 bg-linear-to-b from-[#8B7FFF] to-[#6DD5ED] rounded-r"
                     transition={{ type: "spring", stiffness: 300, damping: 30 }}
                   />
                 )}
-                <Icon className="w-5 h-5 flex-shrink-0" />
+                <Icon className="w-5 h-5 shrink-0" />
                 {!collapsed && (
                   <span className="text-sm font-medium">{item.label}</span>
                 )}

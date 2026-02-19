@@ -141,11 +141,11 @@ export default function SellerChatsListPage() {
               >
                 <Link
                   href={`/seller/chats/${chat.id}`}
-                  className="flex items-center gap-4 p-4 sm:p-5 hover:bg-white/[0.02] transition-colors group cursor-pointer"
+                  className="flex items-center gap-4 p-4 sm:p-5 hover:bg-white/2 transition-colors group cursor-pointer"
                 >
                   {/* Аватар */}
-                  {chat.displayInfo.avatar ? (
-                    <img src={chat.displayInfo.avatar} alt="avatar" className="w-10 h-10 rounded-full" />
+                  {chat.displayInfo.avatar_url ? (
+                    <img src={chat.displayInfo.avatar_url} alt="avatar" className="w-10 h-10 rounded-full" />
                   ) : (
                     <User className="w-8 h-8 text-[#8B7FFF]" />
                   )}

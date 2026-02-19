@@ -93,7 +93,7 @@ export default function ClientChatPage({
   return (
     <div className="max-w-4xl mx-auto h-[calc(100vh-120px)] min-h-[500px] flex flex-col bg-[#1A1F2E]/80 backdrop-blur-xl border border-white/5 rounded-2xl overflow-hidden shadow-2xl">
       {/* 1. ШАПКА ЧАТА (Данные магазина) */}
-      <div className="flex items-center gap-4 p-4 sm:p-6 border-b border-white/5 bg-white/[0.02]">
+      <div className="flex items-center gap-4 p-4 sm:p-6 border-b border-white/5 bg-white/2">
         <button
           onClick={() => router.back()}
           className="p-2 -ml-2 rounded-xl text-[#A0AEC0] hover:text-white hover:bg-white/5 transition-colors"

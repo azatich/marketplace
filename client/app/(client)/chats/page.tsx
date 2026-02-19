@@ -90,7 +90,7 @@ export default function ClientChatsListPage() {
                 href={`/chats/${chat.id}`}
                 className={`flex items-center gap-4 p-4 rounded-2xl border transition-all ${
                   isUnread 
-                    ? "bg-white/[0.04] border-[#8B7FFF]/30 shadow-lg shadow-[#8B7FFF]/5" 
+                    ? "bg-white/4 border-[#8B7FFF]/30 shadow-lg shadow-[#8B7FFF]/5" 
                     : "bg-[#1A1F2E]/80 border-white/5 hover:border-white/10"
                 }`}
               >

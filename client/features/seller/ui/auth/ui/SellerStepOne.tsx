@@ -28,6 +28,7 @@ export const SellerStepOne = ({
           </span>
           <input
             type="email"
+            required
             placeholder="john@example.com"
             value={formData?.email}
             onChange={(e) =>
@@ -51,7 +52,7 @@ export const SellerStepOne = ({
           </span>
           <input
             type={showPassword ? "text" : "password"}
-            placeholder="Create a password"
+            placeholder="Создайте пароль"
             value={formData?.password}
             onChange={(e) =>
               setFormData({ ...formData, password: e.target.value })
