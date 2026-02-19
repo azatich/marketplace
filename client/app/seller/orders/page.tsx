@@ -45,11 +45,10 @@ const SellerOrdersPage = () => {
     );
   }
 
-  // Считаем общую статистику для шапки
   const activeOrders = orderItems.filter(i => i.status === 'processing' || i.status === 'shipped').length;
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl space-y-8">
+    <div className="container mx-auto px-4 py-4 max-w-6xl space-y-8">
       {/* Шапка страницы */}
       <motion.div 
         initial={{ opacity: 0, y: -10 }} 
