@@ -21,6 +21,8 @@ interface ClientProfileResponse {
   first_name: string;
   last_name: string;
   role: "client" | "seller" | "admin";
+  avatar_url: string;
+  phone: string;
   created_at: string;
   updated_at: string;
   customers: Customer[];
