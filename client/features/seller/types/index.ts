@@ -198,7 +198,7 @@ export interface UpdatedProductItem {
   visibility: boolean;
 }
 
-export type OrderItemStatus = 'processing' | 'shipped' | 'delivered' | 'cancelled';
+export type OrderItemStatus = 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'cancellation_requested';;
 
 export interface SellerOrderItem {
   id: string;
@@ -228,5 +228,11 @@ export interface SellerOrderItem {
       }[];
     };
   };
+
+  cancellation_requests?: { 
+    reason: string; 
+    status: string; 
+    initiated_by: string; 
+  }[];
 }
 

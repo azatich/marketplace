@@ -4,11 +4,12 @@ import { useState } from "react";
 import { SellerOrderItem } from "@/features/seller";
 import { useSellerOrders } from "@/features/seller/hooks/useSellerOrders";
 import { SellerOrderCard } from "@/features/seller/ui/orders/OrderCard";
-import { motion } from "framer-motion";
-import { PackageOpen, Loader2, SearchX } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { PackageOpen, Loader2, SearchX, AlertCircle } from "lucide-react";
 
 const ORDER_STATUSES = [
   { id: "all", label: "Все заказы" },
+  { id: "cancellation_requested", label: "Запросы отмены", alert: true }, // Новая вкладка
   { id: "processing", label: "В сборке" },
   { id: "shipped", label: "Отправлены" },
   { id: "delivered", label: "Доставлены" },
@@ -17,8 +18,6 @@ const ORDER_STATUSES = [
 
 const SellerOrdersPage = () => {
   const { data: orderItems = [], isPending, isError } = useSellerOrders();
-  
-  // Состояние для текущего выбранного фильтра
   const [activeTab, setActiveTab] = useState("all");
 
   if (isPending) {
@@ -58,6 +57,7 @@ const SellerOrdersPage = () => {
   }
 
   const activeOrdersCount = orderItems.filter(i => i.status === 'processing' || i.status === 'shipped').length;
+  const requestsCount = orderItems.filter(i => i.status === 'cancellation_requested').length;
 
   const filteredItems = activeTab === "all" 
     ? orderItems 
@@ -66,14 +66,21 @@ const SellerOrdersPage = () => {
   return (
     <div className="container mx-auto space-y-8">
       
-      {/* Шапка страницы */}
       <motion.div 
         initial={{ opacity: 0, y: -10 }} 
         animate={{ opacity: 1, y: 0 }}
         className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4"
       >
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Заказы покупателей</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold text-white mb-2">Заказы покупателей</h1>
+            {requestsCount > 0 && (
+               <div className="flex items-center gap-1.5 px-3 py-1 bg-red-500/20 text-red-400 rounded-full text-sm font-medium mb-2 border border-red-500/20">
+                 <AlertCircle className="w-4 h-4" />
+                 {requestsCount} запрос(ов)
+               </div>
+            )}
+          </div>
           <p className="text-[#A0AEC0]">Управляйте сборкой и доставкой ваших товаров</p>
         </div>
         <div className="px-4 py-2 bg-[#8B7FFF]/10 border border-[#8B7FFF]/20 rounded-lg">
@@ -92,20 +99,27 @@ const SellerOrdersPage = () => {
             ? orderItems.length 
             : orderItems.filter(i => i.status === status.id).length;
 
+          // Особый стиль для кнопки с запросами на отмену
+          const isAlertTab = status.alert && count > 0;
+
           return (
             <button
               key={status.id}
               onClick={() => setActiveTab(status.id)}
               className={`px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-2 border ${
                 activeTab === status.id
-                  ? "bg-[#8B7FFF] text-white border-[#8B7FFF] shadow-lg shadow-[#8B7FFF]/20"
-                  : "bg-[#1A1F2E]/80 text-[#A0AEC0] border-white/5 hover:border-white/20 hover:text-white"
+                  ? isAlertTab 
+                    ? "bg-red-500 text-white border-red-500 shadow-lg shadow-red-500/20"
+                    : "bg-[#8B7FFF] text-white border-[#8B7FFF] shadow-lg shadow-[#8B7FFF]/20"
+                  : isAlertTab
+                    ? "bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20"
+                    : "bg-[#1A1F2E]/80 text-[#A0AEC0] border-white/5 hover:border-white/20 hover:text-white"
               }`}
             >
               {status.label}
               {count > 0 && (
                 <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${
-                  activeTab === status.id ? "bg-white/20 text-white" : "bg-white/10 text-[#A0AEC0]"
+                  activeTab === status.id ? "bg-white/20 text-white" : "bg-white/10 text-current"
                 }`}>
                   {count}
                 </span>
@@ -115,9 +129,7 @@ const SellerOrdersPage = () => {
         })}
       </motion.div>
 
-      {/* Список товаров */}
       {filteredItems.length === 0 ? (
-        // Пустое состояние для конкретного фильтра
         <motion.div 
           initial={{ opacity: 0 }} 
           animate={{ opacity: 1 }} 
@@ -125,21 +137,16 @@ const SellerOrdersPage = () => {
         >
           <SearchX className="w-12 h-12 text-[#A0AEC0] mx-auto mb-4 opacity-50" />
           <h3 className="text-lg font-medium text-white">В этой категории пусто</h3>
-          <p className="text-[#A0AEC0] mt-1">Заказов с таким статусом пока нет.</p>
         </motion.div>
       ) : (
         <motion.div 
           className="space-y-6"
           initial="hidden"
           animate="visible"
-          // Ключ заставляет анимацию запускаться заново при смене таба
           key={activeTab} 
           variants={{
             hidden: { opacity: 0 },
-            visible: {
-              opacity: 1,
-              transition: { staggerChildren: 0.1 }
-            }
+            visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
           }}
         >
           {filteredItems.map((item: SellerOrderItem) => (

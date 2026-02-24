@@ -1,15 +1,42 @@
 "use client";
 
-import { useClientOrders } from "@/features/client/hooks/useClientOrders";
+import { useState } from "react";
 import { OrderCard } from "@/features/client/ui/OrderCard";
-import { motion } from "framer-motion";
-import { Package, Loader2 } from "lucide-react";
-import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
+import { Package, Loader2, SearchX, CheckSquare, Square, Trash2, X } from "lucide-react";
+import { useClientOrders, useHideOrders } from "@/features/client";
+
+const TABS = [
+  { id: "active", label: "Активные" },
+  { id: "completed", label: "Завершенные" },
+  { id: "cancelled", label: "Отмененные" },
+];
 
 const OrdersPage = () => {
   const { data: orders = [], isLoading, isError } = useClientOrders();
-  console.log(orders);
+  const { mutate: hideOrders, isPending: isHiding } = useHideOrders();
   
+  const [activeTab, setActiveTab] = useState("active");
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
+
+  const toggleSelectMode = () => {
+    setIsSelectMode(!isSelectMode);
+    setSelectedOrderIds([]); 
+  };
+
+  const toggleOrderSelection = (orderId: string) => {
+    setSelectedOrderIds((prev) => 
+      prev.includes(orderId) 
+        ? prev.filter((id) => id !== orderId)
+        : [...prev, orderId]
+    );
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedOrderIds.length === 0) return;
+    hideOrders(selectedOrderIds, { onSuccess: () => toggleSelectMode() });
+  };
 
   if (isLoading) {
     return (
@@ -21,53 +48,131 @@ const OrdersPage = () => {
   }
 
   if (isError) {
-    return (
-      <div className="text-center py-20 text-red-400">
-        Произошла ошибка при загрузке заказов. Попробуйте позже.
-      </div>
-    );
+    return <div className="text-center py-20 text-red-400">Произошла ошибка при загрузке заказов.</div>;
   }
 
-  if (orders.length === 0) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="flex flex-col items-center justify-center py-24 px-4 text-center"
-      >
-        <div className="w-20 h-20 bg-[#1A1F2E] rounded-full flex items-center justify-center mb-6 shadow-xl border border-white/5">
-          <Package className="w-10 h-10 text-[#8B7FFF]" />
-        </div>
-        <h2 className="text-2xl font-bold text-white mb-2">У вас пока нет заказов</h2>
-        <p className="text-[#A0AEC0] max-w-md mb-8">
-          Кажется, вы еще ничего не заказали. Перейдите в каталог, чтобы найти что-то интересное!
-        </p>
-        <Link 
-          href="/catalog"
-          className="px-8 py-4 bg-linear-to-r from-[#8B7FFF] to-[#6DD5ED] rounded-xl text-white font-bold hover:shadow-lg hover:shadow-[#8B7FFF]/30 transition-all active:scale-95"
-        >
-          Перейти к покупкам
-        </Link>
-      </motion.div>
-    );
-  }
+  // --- НОВАЯ ЛОГИКА ФИЛЬТРАЦИИ ПО ТОВАРАМ ---
+  const filteredOrders = orders.filter((order) => {
+    const items = order.order_items || [];
+    
+    // Заказ "Активный", если в нем есть хотя бы один товар в процессе (или в ожидании отмены)
+    const hasActiveItems = items.some(i => ['pending', 'paid', 'processing', 'shipped', 'cancellation_requested'].includes(i.status));
+    // Заказ "Отмененный", если АБСОЛЮТНО ВСЕ товары в нем отменены
+    const isAllCancelled = items.every(i => i.status === 'cancelled');
+    // Заказ "Завершенный", если нет активных, и есть хотя бы один доставленный
+    const isCompleted = !hasActiveItems && !isAllCancelled;
+
+    if (activeTab === "active") return hasActiveItems;
+    if (activeTab === "completed") return isCompleted;
+    if (activeTab === "cancelled") return isAllCancelled;
+    
+    return true;
+  });
 
   return (
-    <div className="space-y-6 max-w-4xl px-4 mx-auto pt-4 pb-12">
-      <motion.div 
-        initial={{ opacity: 0, y: -10 }} 
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <h1 className="text-3xl font-bold text-white mb-2">Мои заказы</h1>
-        <p className="text-[#A0AEC0]">История ваших покупок и статусы доставки</p>
+    <div className="space-y-6 max-w-4xl px-4 mx-auto pt-4 pb-24 relative">
+      
+      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex justify-between items-end">
+        <div>
+          <h1 className="text-3xl font-bold text-white mb-2">Мои заказы</h1>
+          <p className="text-[#A0AEC0]">История ваших покупок</p>
+        </div>
+        
+        {["completed", "cancelled"].includes(activeTab) && filteredOrders.length > 0 && (
+          <button 
+            onClick={toggleSelectMode}
+            className={`text-sm font-medium transition-colors ${isSelectMode ? "text-[#8B7FFF]" : "text-[#A0AEC0] hover:text-white"}`}
+          >
+            {isSelectMode ? "Отменить выбор" : "Удалить из истории"}
+          </button>
+        )}
       </motion.div>
 
-      <motion.div 
-        className="space-y-6">
-        {orders.map((order) => (
-          <OrderCard key={order.id} order={order} />
+      <motion.div className="flex p-1 bg-[#1A1F2E] rounded-xl border border-white/5 w-fit">
+        {TABS.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => {
+              setActiveTab(tab.id);
+              if (isSelectMode) toggleSelectMode();
+            }}
+            className={`px-6 py-2 rounded-lg text-sm font-medium transition-all ${
+              activeTab === tab.id ? "bg-[#2D3748] text-white shadow-sm" : "text-[#A0AEC0] hover:text-white"
+            }`}
+          >
+            {tab.label}
+          </button>
         ))}
       </motion.div>
+
+      {filteredOrders.length === 0 ? (
+         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-16 text-center border border-dashed border-white/10 rounded-2xl bg-[#1A1F2E]/30">
+           <SearchX className="w-12 h-12 text-[#A0AEC0] mx-auto mb-4 opacity-50" />
+           <h3 className="text-lg font-medium text-white mb-1">Здесь пусто</h3>
+         </motion.div>
+      ) : (
+        <div className="space-y-4">
+          {filteredOrders.map((order) => {
+            const isSelected = selectedOrderIds.includes(order.id);
+            return (
+              <motion.div key={order.id} layout className="flex items-stretch gap-3">
+                <AnimatePresence>
+                  {isSelectMode && (
+                    <motion.div
+                      initial={{ width: 0, opacity: 0 }}
+                      animate={{ width: "auto", opacity: 1 }}
+                      exit={{ width: 0, opacity: 0 }}
+                      className="flex items-center"
+                    >
+                      <button
+                        onClick={() => toggleOrderSelection(order.id)}
+                        className="p-2 -ml-2 text-[#A0AEC0] hover:text-[#8B7FFF] transition-colors"
+                      >
+                        {isSelected ? <CheckSquare className="w-6 h-6 text-[#8B7FFF]" /> : <Square className="w-6 h-6" />}
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <div 
+                  className={`flex-1 transition-all ${isSelected ? "ring-2 ring-[#8B7FFF]/50 rounded-2xl" : ""}`}
+                  onClick={() => isSelectMode && toggleOrderSelection(order.id)}
+                >
+                  <div className={isSelectMode ? "pointer-events-none" : ""}>
+                    <OrderCard order={order} />
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Floating Action Bar */}
+      <AnimatePresence>
+        {isSelectMode && selectedOrderIds.length > 0 && (
+          <motion.div
+            initial={{ y: 100, opacity: 0, x: "-50%" }}
+            animate={{ y: 0, opacity: 1, x: "-50%" }}
+            exit={{ y: 100, opacity: 0, x: "-50%" }}
+            className="fixed bottom-6 left-1/2 z-50 flex items-center gap-4 bg-[#1A1F2E]/90 backdrop-blur-xl border border-white/10 p-4 rounded-2xl shadow-2xl"
+          >
+            <span className="text-white font-medium px-2">Выбрано: {selectedOrderIds.length}</span>
+            <button
+              onClick={handleDeleteSelected}
+              disabled={isHiding}
+              className="flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl font-medium transition-colors disabled:opacity-50"
+            >
+              {isHiding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+              Удалить из истории
+            </button>
+            <div className="w-px h-8 bg-white/10 mx-1" />
+            <button onClick={toggleSelectMode} className="p-2 text-[#A0AEC0] hover:text-white transition-colors bg-white/5 rounded-xl">
+              <X className="w-5 h-5" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

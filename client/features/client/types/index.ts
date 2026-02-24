@@ -74,7 +74,7 @@ export interface OrderRequest {
 }
 
 export type OrderStatus = 'pending' | 'paid' | 'shipped' | 'delivered' | 'cancelled';
-export type OrderItemStatus = 'processing' | 'shipped' | 'delivered' | 'cancelled';
+export type OrderItemStatus = 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'cancellation_requested';
 
 export interface OrderProduct {
   title: string;
@@ -89,6 +89,11 @@ export interface OrderItem {
   price_at_purchase: number;
   status: OrderItemStatus;
   products: OrderProduct;
+  cancellation_requests?: {
+    reason: string;
+    status: string;
+    initiated_by: 'client' | 'seller';
+  }[];
 }
 
 export interface Order {
