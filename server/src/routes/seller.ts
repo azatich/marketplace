@@ -23,6 +23,7 @@ router.get('/products/:id', SellerController.getSingleProduct)
 
 router.post('/products', upload.array('images', 10), SellerController.addProduct)
 router.post('/products/toggle-visibility/:id', SellerController.toggleProductVisibility)
+router.post('/products/handle-cancellation/:id', SellerController.handleCancellation)
 
 router.delete('/products/:id', SellerController.deleteProduct)
 

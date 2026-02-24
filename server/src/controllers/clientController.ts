@@ -329,12 +329,14 @@ export class ClientController {
           .from("avatars")
           .upload(fileName, avatarFile.buffer, {
             contentType: avatarFile.mimetype,
-            upsert: false
+            upsert: false,
           });
 
         if (uploadError) throw uploadError;
 
-        const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(uploadData.path);
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from("avatars").getPublicUrl(uploadData.path);
         avatarUrl = publicUrl;
       }
 
@@ -347,24 +349,28 @@ export class ClientController {
       }
 
       if (Object.keys(userUpdateData).length > 1) {
-        const { error: uError } = await supabase.from("users").update(userUpdateData).eq("id", payload.userId);
+        const { error: uError } = await supabase
+          .from("users")
+          .update(userUpdateData)
+          .eq("id", payload.userId);
         if (uError) throw uError;
       }
 
       // 4. Обновление таблицы CUSTOMERS
-      const clientUpdateData: any = { 
-          updated_at: new Date().toISOString(),
-          avatar_url: avatarUrl // Обновляем ссылку на аватар
+      const clientUpdateData: any = {
+        updated_at: new Date().toISOString(),
+        avatar_url: avatarUrl, // Обновляем ссылку на аватар
       };
 
       if (username !== undefined) clientUpdateData.username = username;
       if (phone !== undefined) clientUpdateData.phone = phone;
       if (gender !== undefined) clientUpdateData.gender = gender;
       if (birth_date !== undefined) clientUpdateData.birth_date = birth_date;
-      
+
       // Обработка адресов (парсим из строки JSON)
       if (addresses !== undefined) {
-        clientUpdateData.addresses = typeof addresses === 'string' ? JSON.parse(addresses) : addresses;
+        clientUpdateData.addresses =
+          typeof addresses === "string" ? JSON.parse(addresses) : addresses;
       }
 
       const { error: cError } = await supabase
@@ -375,10 +381,81 @@ export class ClientController {
       if (cError) throw cError;
 
       return res.status(200).json({ message: "Профиль успешно обновлен" });
-
     } catch (error: any) {
       console.error("Update Profile Error:", error);
-      return res.status(500).json({ message: "Ошибка при обновлении профиля", error: error.message });
+      return res
+        .status(500)
+        .json({
+          message: "Ошибка при обновлении профиля",
+          error: error.message,
+        });
+    }
+  }
+
+  static async requestCancellation(req: Request, res: Response) {
+    try {
+      const token = req.cookies.token;
+      if (!token) return res.status(401).json({ message: "Неавторизован" });
+
+      const payload = await JWTUtils.verify(token);
+      if (!payload || payload.role !== UserRole.CLIENT) {
+        return res.status(403).json({ message: "Доступ запрещен" });
+      }
+
+      const clientId = payload.userId;
+      const { orderItemId, reason } = req.body;
+
+      if (!orderItemId || !reason) {
+        return res
+          .status(400)
+          .json({ message: "Укажите товар и причину отмены" });
+      }
+
+      // 2. Проверяем, принадлежит ли этот товар клиенту, и не отменен ли он уже
+      const { data: item, error: itemError } = await supabase
+        .from("order_items")
+        .select("id, status, orders!inner(user_id)") // !inner гарантирует жесткую связь
+        .eq("id", orderItemId)
+        .eq("orders.user_id", clientId)
+        .single();
+
+      if (itemError || !item) {
+        return res
+          .status(403)
+          .json({ message: "Товар не найден или доступ запрещен", error: itemError});
+      }
+
+      if (item.status === "cancelled" || item.status === "delivered") {
+        return res
+          .status(400)
+          .json({ message: "Этот товар уже нельзя отменить" });
+      }
+
+      // 3. Создаем запрос на отмену
+      const { error: cancelError } = await supabase
+        .from("cancellation_requests")
+        .insert({
+          order_item_id: orderItemId,
+          reason: reason,
+          status: "pending",
+          initiated_by: "client",
+        });
+
+      if (cancelError) throw cancelError;
+
+      // 4. (Опционально) Меняем статус товара на 'cancellation_requested',
+      // чтобы фронтенд сразу перерисовал UI
+      await supabase
+        .from("order_items")
+        .update({ status: "cancellation_requested" })
+        .eq("id", orderItemId);
+
+      return res
+        .status(200)
+        .json({ message: "Запрос на отмену отправлен продавцу" });
+    } catch (error) {
+      console.error("Cancellation Request Error:", error);
+      return res.status(500).json({ message: "Ошибка сервера" });
     }
   }
 }

@@ -21,6 +21,7 @@ router.get("/products", ClientController.getProducts);
 router.get("/products/:id", ClientController.getProductById);
 router.get("/categories", ClientController.getCategories);
 router.put('/profile', upload.single('avatar'), ClientController.updateProfile)
+router.post('/request-cancellation', ClientController.requestCancellation)
 
 export default router;
 

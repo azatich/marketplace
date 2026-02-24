@@ -763,4 +763,85 @@ export class SellerController {
       return res.status(500).json({ message: "Ошибка сервера" });
     }
   }
+
+  static async handleCancellation(req: Request, res: Response) {
+    try {
+      const token = req.cookies.token;
+      if (!token) return res.status(401).json({ message: "Не авторизован" });
+
+      const payload = await JWTUtils.verify(token);
+      if (!payload) return res.status(401).json({ message: "Не авторизован" });
+
+      if (payload.role !== UserRole.SELLER) {
+        return res.status(403).json({ message: "Доступ запрещен" });
+      }
+
+      const sellerId = payload.userId;
+
+      const orderItemId = req.params.id;
+      // action: 'approve_client', 'reject_client', 'cancel_by_seller'
+      const { action, reason } = req.body;
+
+      // Проверяем, что товар принадлежит этому продавцу
+      const { data: item, error: itemError } = await supabase
+        .from("order_items")
+        .select("id, status")
+        .eq("id", orderItemId)
+        .eq("seller_id", sellerId)
+        .single();
+
+      if (itemError || !item)
+        return res.status(403).json({ message: "Товар не найден", error: itemError});
+
+      if (action === "cancel_by_seller") {
+        // Продавец сам отменяет заказ (например, нет в наличии)
+        await supabase.from("cancellation_requests").insert({
+          order_item_id: orderItemId,
+          reason: reason || "Отменено продавцом",
+          status: "approved",
+          initiated_by: "seller",
+        });
+
+        // Сразу меняем статус товара
+        await supabase
+          .from("order_items")
+          .update({ status: "cancelled" })
+          .eq("id", orderItemId);
+        return res.status(200).json({ message: "Товар успешно отменен" });
+      } else if (action === "approve_client" || action === "reject_client") {
+        // Обработка запроса от клиента
+        const newStatus = action === "approve_client" ? "approved" : "rejected";
+
+        // Обновляем статус реквеста
+        await supabase
+          .from("cancellation_requests")
+          .update({ status: newStatus })
+          .eq("order_item_id", orderItemId)
+          .eq("status", "pending"); // Защита от двойного клика
+
+        // Если одобрили - меняем статус самого товара
+        if (newStatus === "approved") {
+          await supabase
+            .from("order_items")
+            .update({ status: "cancelled" })
+            .eq("id", orderItemId);
+        } else {
+          // Если отклонили - возвращаем статус товара обратно в обработку
+          await supabase
+            .from("order_items")
+            .update({ status: "processing" })
+            .eq("id", orderItemId);
+        }
+
+        return res
+          .status(200)
+          .json({
+            message: `Запрос ${newStatus === "approved" ? "одобрен" : "отклонен"}`,
+          });
+      }
+    } catch (error) {
+      console.error("Seller Cancellation Error:", error);
+      return res.status(500).json({ message: "Ошибка сервера" });
+    }
+  }
 }

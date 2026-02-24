@@ -145,7 +145,8 @@ export class OrderController {
                     products (
                         title,
                         images
-                    )
+                    ),
+                    cancellation_requests ( reason, status, initiated_by )
                 )
                 `,
         )
@@ -162,6 +163,45 @@ export class OrderController {
       return res.status(200).json(data);
     } catch (error) {
       console.error("Get Client Orders Error:", error);
+    }
+  }
+
+  static async hideCanceledOrdersFromClient(req: Request, res: Response) {
+    try {
+      const token = req.cookies.token;
+      if (!token) return res.status(401).json({ message: "Неавторизован" });
+
+      const payload = await JWTUtils.verify(token);
+      if (!payload || payload.role !== UserRole.CLIENT) {
+        return res.status(403).json({ message: "Доступ запрещен" });
+      }
+
+      const clientId = payload.userId;
+
+      const { orderIds } = req.body;
+
+      if (!orderIds || !Array.isArray(orderIds)) {
+        return res.status(400).json({ message: "Не переданы ID заказов" });
+      }
+
+      const { error } = await supabase
+        .from("orders")
+        .update({ is_hidden_by_client: true })
+        .in("id", orderIds)
+        .eq("user_id", clientId);
+
+      if (error) {
+        return res.status(500).json({
+          message: "Ошибка при скрытии заказов",
+          error: error.message,
+        });
+      }
+
+      return res
+        .status(200)
+        .json({ message: "Заказы успешно скрыты", hiddenIds: orderIds });
+    } catch (error) {
+      return res.status(500).json({ message: "Внутренняя ошибка сервера" });
     }
   }
 
@@ -199,6 +239,7 @@ export class OrderController {
             title,
             images
           ),
+          
 
           orders (
             shipping_address,
@@ -215,7 +256,9 @@ export class OrderController {
                 phone
               )
             ) 
-          )
+          ),
+
+          cancellation_requests ( reason, status, initiated_by )
         `,
         )
         .eq("seller_id", payload.userId)
