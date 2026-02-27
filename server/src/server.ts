@@ -29,7 +29,7 @@ const supabase = connectDb(
 
 app.use(
   cors({
-    origin: ["http://localhost:3000"],
+    origin: ["http://localhost:3000", 'https://youmarket-azat.vercel.app'],
     credentials: true,
   })
 );
