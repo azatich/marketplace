@@ -4,18 +4,20 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import { showErrorToast, } from "@/lib/toasts";
+import { showErrorToast } from "@/lib/toasts";
 import { UpdatedProductItem } from "../types";
 
 export const useUpdateProduct = (
-  options?: UseMutationOptions<any, any, UpdatedProductItem>
+  options?: UseMutationOptions<any, any, UpdatedProductItem>,
 ) => {
   const queryClient = useQueryClient();
 
+  const { onSuccess, onError, ...restOptions } = options ?? {};
+
   return useMutation({
+    ...restOptions,
     mutationFn: async (data: UpdatedProductItem) => {
       const { id, ...productData } = data;
-      
       const res = await api.put(`/seller/products/${id}`, productData);
       return res.data;
     },
@@ -23,23 +25,19 @@ export const useUpdateProduct = (
       queryClient.invalidateQueries({ queryKey: ["seller-products"] });
       queryClient.invalidateQueries({ queryKey: ["product", variables.id] });
 
-      // Вызываем пользовательский onSuccess если есть
-      if (options?.onSuccess) {
-  options.onSuccess(data, variables, undefined, context as any);
-}
-    },
-    onError: (error: any, variables, context) => {
-      // Показываем toast с ошибкой
-      showErrorToast(
-        "Ошибка обновления",
-        error.response?.data?.message || "Не удалось обновить продукт"
-      );
-
-      // Вызываем пользовательский onError если есть
-      if (options?.onError) {
-        options.onError(error, variables, undefined, context);
+      if (onSuccess) {
+        onSuccess(data, variables, undefined, context as any);
       }
     },
-    ...options,
+    onError: (error: any, variables, context) => {
+      showErrorToast(
+        "Ошибка обновления",
+        error.response?.data?.message || "Не удалось обновить продукт",
+      );
+
+      if (onError) {
+        onError(error, variables, undefined, context as any);
+      }
+    },
   });
 };
