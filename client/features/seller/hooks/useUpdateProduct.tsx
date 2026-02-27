@@ -25,8 +25,8 @@ export const useUpdateProduct = (
 
       // Вызываем пользовательский onSuccess если есть
       if (options?.onSuccess) {
-        options.onSuccess(data, variables, undefined, context);
-      }
+  options.onSuccess(data, variables, undefined, context as any);
+}
     },
     onError: (error: any, variables, context) => {
       // Показываем toast с ошибкой
