@@ -20,9 +20,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon --exec tsx src/server.ts",
     "build": "tsc",
-    "start": "node src/server.ts"
+    "start": "node dist/server.js",
+    "dev": "ts-node-dev src/server.ts"
   },
   "keywords": [],
   "author": "",
