@@ -26,7 +26,7 @@ function SellerLayout({ children }: { children: React.ReactNode }) {
       />
       
       <div 
-        className={`flex-1 transition-all duration-300 flex flex-col ${collapsed ? "md:ml-20" : "md:ml-[240px]"}`}
+        className={`flex-1 transition-all duration-300 flex flex-col ${collapsed ? "md:ml-20" : "md:ml-[260px]"}`}
       >
         <Header onOpenMobile={handleOpenMobile} />
         <main className="p-8">{children}</main>

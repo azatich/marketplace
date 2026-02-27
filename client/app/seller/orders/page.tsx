@@ -9,7 +9,7 @@ import { PackageOpen, Loader2, SearchX, AlertCircle } from "lucide-react";
 
 const ORDER_STATUSES = [
   { id: "all", label: "Все заказы" },
-  { id: "cancellation_requested", label: "Запросы отмены", alert: true }, // Новая вкладка
+  { id: "cancellation_requested", label: "Запросы отмены", alert: true },
   { id: "processing", label: "В сборке" },
   { id: "shipped", label: "Отправлены" },
   { id: "delivered", label: "Доставлены" },
@@ -99,7 +99,6 @@ const SellerOrdersPage = () => {
             ? orderItems.length 
             : orderItems.filter(i => i.status === status.id).length;
 
-          // Особый стиль для кнопки с запросами на отмену
           const isAlertTab = status.alert && count > 0;
 
           return (

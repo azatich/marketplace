@@ -13,6 +13,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
+import Link from "next/link";
 
 const navItems = [
   { id: "dashboard", label: "Панель управления", icon: Home, href: "/seller/dashboard" },
@@ -68,9 +69,7 @@ export const Sidebar = ({
       {/* 2. Сам Сайдбар */}
       <motion.div
         className={`fixed left-0 top-0 h-screen bg-[#1A1F2E]/95 md:bg-[#1A1F2E]/80 backdrop-blur-xl border-r border-white/5 z-50 flex flex-col transition-transform duration-300 ease-in-out md:transition-none
-          /* На мобилках: прячем за экран, если не открыто */
           ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
-          /* На десктопе: всегда показываем (сбрасываем transform) */
           md:translate-x-0
         `}
         // Ширина на мобилках фиксированная (260px), на десктопе зависит от collapsed
@@ -85,9 +84,9 @@ export const Sidebar = ({
               <div className="w-10 h-10 rounded-lg bg-linear-to-br from-[#8B7FFF] to-[#6DD5ED] flex items-center justify-center shadow-lg shadow-[#8B7FFF]/30 shrink-0">
                 <Package className="w-6 h-6 text-white" />
               </div>
-              <span className="tracking-tight font-semibold text-white text-xl">
-                MARKETPLACE
-              </span>
+              <Link href='/seller/dashboard' className="text-xl sm:text-2xl font-bold bg-linear-to-r from-[#8B7FFF] to-[#6DD5ED] bg-clip-text text-transparent">
+                YouMarket
+              </Link>
             </div>
 
             {/* Заглушка логотипа для свернутого состояния (только десктоп) */}
