@@ -151,6 +151,7 @@ export class OrderController {
                 `,
         )
         .eq("user_id", payload.userId)
+        .eq('is_hidden_by_client', false)
         .order("created_at", { ascending: false });
 
       if (error) {
