@@ -35,9 +35,9 @@ export const useChatSocket = (chatId: string) => {
         }
 
         socketRef.current = io(
-          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000",
+          process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:8000",
           {
-            withCredentials: true, // Передает куки с JWT токеном
+            withCredentials: true,
           },
         );
 
