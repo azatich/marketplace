@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { io, Socket } from "socket.io-client";
 import { api } from "@/lib/api";
+import Cookies from "js-cookie";
 
 export interface Message {
   id: string;
@@ -38,6 +39,9 @@ export const useChatSocket = (chatId: string) => {
           process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:8000",
           {
             withCredentials: true,
+            auth: {
+              token: Cookies.get('token'),
+            }
           },
         );
 
@@ -49,6 +53,10 @@ export const useChatSocket = (chatId: string) => {
             socket.emit("check_online_status", res.data.companionId);
           }
         });
+
+        socket.on('connect_error', (error) => {
+          console.error('Socket connection error:', error.message);
+        })
 
         socket.on("user_typing", ({ userId, isTyping }) => {
           if (userId === res.data.companionId) {
