@@ -1,36 +1,19 @@
 import { supabase } from "../server";
-import { Request, Response } from "express";
-import { JWTUtils } from "../utils/jwt";
+import { Response } from "express";
 import { UserRole } from "../types";
 import bcrypt from "bcryptjs";
+import { AuthRequest } from "../middleware/auth";
 
 export class SellerController {
-  static async getSellerProducts(req: Request, res: Response) {
+  static async getSellerProducts(req: AuthRequest, res: Response) {
     try {
-      const token = req.cookies.token;
-
-      if (!token) {
-        return res.status(401).json({ message: "Неавторизован" });
-      }
-
-      const payload = await JWTUtils.verify(token);
-
-      if (!payload) {
-        return res.status(401).json({ message: "Неавторизован" });
-      }
-
-      if (payload.role !== UserRole.SELLER) {
-        return res.status(403).json({ message: "Доступ запрещен" });
-      }
-
       const { data, error } = await supabase
         .from("products")
         .select("*")
-        .eq("seller_id", payload.userId)
+        .eq("seller_id", req.user!.userId)
         .order("created_at", { ascending: false });
 
       if (error) {
-        console.error("Ошибка при получении продуктов:", error);
         return res.status(500).json({
           message: "Ошибка при получении продуктов",
           error: error.message,
@@ -39,27 +22,12 @@ export class SellerController {
 
       return res.status(200).json(data);
     } catch (error) {
-      console.error("Неожиданная ошибка:", error);
-      return res.status(500).json({
-        message: "Внутренняя ошибка сервера",
-      });
+      return res.status(500).json({ message: "Внутренняя ошибка сервера" });
     }
   }
 
-  static async getSingleProduct(req: Request, res: Response) {
+  static async getSingleProduct(req: AuthRequest, res: Response) {
     try {
-      const token = req.cookies.token;
-
-      if (!token) {
-        return res.status(401).json({ message: "Неавторизован" });
-      }
-
-      const payload = await JWTUtils.verify(token);
-
-      if (!payload || payload.role !== UserRole.SELLER) {
-        return res.status(403).json({ message: "Доступ запрещен" });
-      }
-
       const { id } = req.params;
 
       const { data: existingProduct, error: fetchError } = await supabase
@@ -72,7 +40,7 @@ export class SellerController {
         return res.status(404).json({ message: "Продукт не найден" });
       }
 
-      if (existingProduct.seller_id !== payload.userId) {
+      if (existingProduct.seller_id !== req.user!.userId) {
         return res.status(403).json({ message: "Это не ваш продукт" });
       }
 
@@ -95,30 +63,12 @@ export class SellerController {
 
       return res.status(200).json(data);
     } catch (error) {
-      return res.status(500).json({
-        message: "Внутренняя ошибка сервера",
-      });
+      return res.status(500).json({ message: "Внутренняя ошибка сервера" });
     }
   }
 
-  static async addProduct(req: Request, res: Response) {
+  static async addProduct(req: AuthRequest, res: Response) {
     try {
-      const token = req.cookies.token;
-
-      if (!token) {
-        return res.status(401).json({ message: "Неавторизован" });
-      }
-
-      const payload = await JWTUtils.verify(token);
-
-      if (!payload) {
-        return res.status(401).json({ message: "Неавторизован" });
-      }
-
-      if (payload.role !== UserRole.SELLER) {
-        return res.status(403).json({ message: "Доступ запрещен" });
-      }
-
       const {
         title,
         description,
@@ -130,58 +80,33 @@ export class SellerController {
         visibility,
       } = req.body;
 
-      // Получаем файлы из multer
       const files = req.files as Express.Multer.File[];
 
-      // Валидация обязательных полей
-      if (
-        !title ||
-        !category ||
-        !subcategory ||
-        !price ||
-        quantity === undefined
-      ) {
-        return res.status(400).json({
-          message: "Не все обязательные поля заполнены",
-        });
+      if (!title || !category || !subcategory || !price || quantity === undefined) {
+        return res.status(400).json({ message: "Не все обязательные поля заполнены" });
       }
 
-      // Валидация изображений
       if (!files || files.length === 0) {
-        return res.status(400).json({
-          message: "Необходимо загрузить хотя бы одно изображение",
-        });
+        return res.status(400).json({ message: "Необходимо загрузить хотя бы одно изображение" });
       }
 
-      // Валидация цены
       if (parseFloat(price) <= 0) {
-        return res.status(400).json({
-          message: "Цена должна быть больше 0",
-        });
+        return res.status(400).json({ message: "Цена должна быть больше 0" });
       }
 
-      // Валидация скидочной цены
       if (discount_price && parseFloat(discount_price) >= parseFloat(price)) {
-        return res.status(400).json({
-          message: "Цена со скидкой должна быть меньше обычной цены",
-        });
+        return res.status(400).json({ message: "Цена со скидкой должна быть меньше обычной цены" });
       }
 
-      // Валидация количества
       if (parseInt(quantity) < 0) {
-        return res.status(400).json({
-          message: "Количество не может быть отрицательным",
-        });
+        return res.status(400).json({ message: "Количество не может быть отрицательным" });
       }
 
-      // Загружаем изображения в Supabase Storage
       const imageUrls: string[] = [];
 
       for (const file of files) {
         const fileExt = file.originalname.split(".").pop();
-        const fileName = `${Date.now()}-${Math.random()
-          .toString(36)
-          .substring(7)}.${fileExt}`;
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
         const filePath = `products/${fileName}`;
 
         const { data: uploadData, error: uploadError } = await supabase.storage
@@ -193,13 +118,9 @@ export class SellerController {
           });
 
         if (uploadError) {
-          console.error("Ошибка загрузки изображения:", uploadError);
-          // Удаляем уже загруженные изображения при ошибке
           for (const url of imageUrls) {
             const path = url.split("/product-images/")[1];
-            if (path) {
-              await supabase.storage.from("product-images").remove([path]);
-            }
+            if (path) await supabase.storage.from("product-images").remove([path]);
           }
           return res.status(500).json({
             message: "Ошибка при загрузке изображений",
@@ -207,44 +128,35 @@ export class SellerController {
           });
         }
 
-        const {
-          data: { publicUrl },
-        } = supabase.storage
+        const { data: { publicUrl } } = supabase.storage
           .from("product-images")
           .getPublicUrl(uploadData.path);
 
         imageUrls.push(publicUrl);
       }
 
-      // Вставка продукта в базу данных
       const { data, error } = await supabase
         .from("products")
-        .insert([
-          {
-            seller_id: payload.userId,
-            title,
-            description: description || null,
-            category,
-            subcategory,
-            quantity: parseInt(quantity),
-            price: parseFloat(price),
-            discount_price: discount_price ? parseFloat(discount_price) : null,
-            images: imageUrls,
-            visibility: visibility === "true" || visibility === true,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-        ])
+        .insert([{
+          seller_id: req.user!.userId,
+          title,
+          description: description || null,
+          category,
+          subcategory,
+          quantity: parseInt(quantity),
+          price: parseFloat(price),
+          discount_price: discount_price ? parseFloat(discount_price) : null,
+          images: imageUrls,
+          visibility: visibility === "true" || visibility === true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }])
         .select();
 
       if (error) {
-        console.error("Ошибка при добавлении продукта:", error);
-        // Удаляем загруженные изображения при ошибке вставки
         for (const url of imageUrls) {
           const path = url.split("/product-images/")[1];
-          if (path) {
-            await supabase.storage.from("product-images").remove([path]);
-          }
+          if (path) await supabase.storage.from("product-images").remove([path]);
         }
         return res.status(500).json({
           message: "Ошибка при добавлении продукта",
@@ -257,7 +169,6 @@ export class SellerController {
         product: data[0],
       });
     } catch (error) {
-      console.error("Неожиданная ошибка:", error);
       return res.status(500).json({
         message: "Внутренняя ошибка сервера",
         error: error instanceof Error ? error.message : "Неизвестная ошибка",
@@ -265,58 +176,29 @@ export class SellerController {
     }
   }
 
-  static async updateProduct(req: Request, res: Response) {
+  static async updateProduct(req: AuthRequest, res: Response) {
     try {
-      const token = req.cookies.token;
       const { id: productId } = req.params;
 
-      if (!token) {
-        return res.status(401).json({ message: "Неавторизован" });
-      }
-
-      const payload = await JWTUtils.verify(token);
-
-      if (!payload || payload.role !== UserRole.SELLER) {
-        return res.status(403).json({ message: "Доступ запрещен" });
-      }
-
       const {
-        title,
-        description,
-        category,
-        subcategory,
-        quantity,
-        price,
-        discount_price,
-        images,
-        visibility,
+        title, description, category, subcategory,
+        quantity, price, discount_price, images, visibility,
       } = req.body;
 
       if (parseFloat(price) <= 0) {
-        return res.status(400).json({
-          message: "Цена должна быть больше 0",
-        });
+        return res.status(400).json({ message: "Цена должна быть больше 0" });
       }
 
-      // Валидация скидочной цены
       if (discount_price && parseFloat(discount_price) >= parseFloat(price)) {
-        return res.status(400).json({
-          message: "Цена со скидкой должна быть меньше обычной цены",
-        });
+        return res.status(400).json({ message: "Цена со скидкой должна быть меньше обычной цены" });
       }
 
-      // Валидация количества
       if (parseInt(quantity) < 0) {
-        return res.status(400).json({
-          message: "Количество не может быть отрицательным",
-        });
+        return res.status(400).json({ message: "Количество не может быть отрицательным" });
       }
 
-      // Валидация изображений (массив URL уже загружен на frontend)
       if (!Array.isArray(images)) {
-        return res.status(400).json({
-          message: "Изображения должны быть массивом",
-        });
+        return res.status(400).json({ message: "Изображения должны быть массивом" });
       }
 
       const { data: existingProduct, error: checkError } = await supabase
@@ -329,22 +211,18 @@ export class SellerController {
         return res.status(404).json({ message: "Продукт не найден" });
       }
 
-      if (existingProduct.seller_id !== payload.userId) {
+      if (existingProduct.seller_id !== req.user!.userId) {
         return res.status(403).json({ message: "Это не ваш продукт" });
       }
 
-      // Обновление продукта
       const { data, error } = await supabase
         .from("products")
         .update({
-          title,
-          description,
-          category,
-          subcategory,
+          title, description, category, subcategory,
           quantity: parseInt(quantity),
           price: parseFloat(price),
           discount_price: discount_price ? parseFloat(discount_price) : null,
-          images: images,
+          images,
           visibility: visibility ?? true,
           updated_at: new Date().toISOString(),
         })
@@ -352,41 +230,22 @@ export class SellerController {
         .select();
 
       if (error) {
-        console.error("Ошибка при обновлении продукта:", error);
         return res.status(500).json({
           message: "Ошибка при обновлении продукта",
           error: error.message,
         });
       }
 
-      return res.status(200).json({
-        message: "Продукт успешно обновлен",
-        product: data[0],
-      });
+      return res.status(200).json({ message: "Продукт успешно обновлен", product: data[0] });
     } catch (error) {
-      console.error("Неожиданная ошибка:", error);
-      return res.status(500).json({
-        message: "Внутренняя ошибка сервера",
-      });
+      return res.status(500).json({ message: "Внутренняя ошибка сервера" });
     }
   }
 
-  static async deleteProduct(req: Request, res: Response) {
+  static async deleteProduct(req: AuthRequest, res: Response) {
     try {
-      const token = req.cookies.token;
       const { id: productId } = req.params;
 
-      if (!token) {
-        return res.status(401).json({ message: "Неавторизован" });
-      }
-
-      const payload = await JWTUtils.verify(token);
-
-      if (!payload || payload.role !== UserRole.SELLER) {
-        return res.status(403).json({ message: "Доступ запрещен" });
-      }
-
-      // Получаем продукт с изображениями
       const { data: existingProduct, error: checkError } = await supabase
         .from("products")
         .select("seller_id, images")
@@ -397,63 +256,38 @@ export class SellerController {
         return res.status(404).json({ message: "Продукт не найден" });
       }
 
-      if (existingProduct.seller_id !== payload.userId) {
+      if (existingProduct.seller_id !== req.user!.userId) {
         return res.status(403).json({ message: "Это не ваш продукт" });
       }
 
-      // Удаляем изображения из Storage
       if (existingProduct.images && existingProduct.images.length > 0) {
         for (const imageUrl of existingProduct.images) {
           try {
             const filePath = imageUrl.split("/product-images/")[1];
-            if (filePath) {
-              await supabase.storage.from("product-images").remove([filePath]);
-            }
+            if (filePath) await supabase.storage.from("product-images").remove([filePath]);
           } catch (error) {
             console.error("Ошибка при удалении изображения:", error);
           }
         }
       }
 
-      // Удаление продукта
-      const { error } = await supabase
-        .from("products")
-        .delete()
-        .eq("id", productId);
+      const { error } = await supabase.from("products").delete().eq("id", productId);
 
       if (error) {
-        console.error("Ошибка при удалении продукта:", error);
         return res.status(500).json({
           message: "Ошибка при удалении продукта",
           error: error.message,
         });
       }
 
-      return res.status(200).json({
-        message: "Продукт успешно удален",
-      });
+      return res.status(200).json({ message: "Продукт успешно удален" });
     } catch (error) {
-      console.error("Неожиданная ошибка:", error);
-      return res.status(500).json({
-        message: "Внутренняя ошибка сервера",
-      });
+      return res.status(500).json({ message: "Внутренняя ошибка сервера" });
     }
   }
 
-  static async toggleProductVisibility(req: Request, res: Response) {
+  static async toggleProductVisibility(req: AuthRequest, res: Response) {
     try {
-      const token = req.cookies.token;
-
-      if (!token) {
-        return res.status(401).json({ message: "Неавторизован" });
-      }
-
-      const payload = await JWTUtils.verify(token);
-
-      if (!payload || payload.role !== UserRole.SELLER) {
-        return res.status(403).json({ message: "Доступ запрещен" });
-      }
-
       const { id } = req.params;
 
       const { data: existingProduct, error: fetchError } = await supabase
@@ -466,7 +300,7 @@ export class SellerController {
         return res.status(404).json({ message: "Продукт не найден" });
       }
 
-      if (existingProduct.seller_id !== payload.userId) {
+      if (existingProduct.seller_id !== req.user!.userId) {
         return res.status(403).json({ message: "Это не ваш продукт" });
       }
 
@@ -497,30 +331,15 @@ export class SellerController {
     }
   }
 
-  static async updateProfile(req: Request, res: Response) {
+  static async updateProfile(req: AuthRequest, res: Response) {
     try {
-      const token = req.cookies.token;
-
-      if (!token) {
-        return res.status(401).json({ message: "Неавторизован" });
-      }
-
-      const payload = await JWTUtils.verify(token);
-
-      if (!payload || payload.role !== UserRole.SELLER) {
-        return res.status(403).json({ message: "Доступ запрещен" });
-      }
-
       const { firstName, lastName, phone, description, password } = req.body;
-
-      // Получаем файл аватара из multer
       const avatarFile = req.file as Express.Multer.File | undefined;
 
-      // Получаем текущего продавца для удаления старого аватара
       const { data: sellerData, error: sellerError } = await supabase
         .from("sellers")
         .select("user_id, avatarUrl")
-        .eq("user_id", payload.userId)
+        .eq("user_id", req.user!.userId)
         .single();
 
       if (sellerError || !sellerData) {
@@ -529,40 +348,26 @@ export class SellerController {
 
       let avatarUrl: string | undefined = undefined;
 
-      // Загружаем новый аватар, если он был передан
       if (avatarFile) {
-        // Валидация типа файла
         if (!avatarFile.mimetype.startsWith("image/")) {
-          return res.status(400).json({
-            message: "Файл должен быть изображением",
-          });
+          return res.status(400).json({ message: "Файл должен быть изображением" });
         }
 
-        // Валидация размера файла (5MB)
         if (avatarFile.size > 5 * 1024 * 1024) {
-          return res.status(400).json({
-            message: "Размер файла не должен превышать 5MB",
-          });
+          return res.status(400).json({ message: "Размер файла не должен превышать 5MB" });
         }
 
-        // Удаляем старый аватар, если он есть
         if (sellerData.avatarUrl) {
           try {
             const oldPath = sellerData.avatarUrl.split("/avatars/")[1];
-            if (oldPath) {
-              await supabase.storage.from("avatars").remove([oldPath]);
-            }
+            if (oldPath) await supabase.storage.from("avatars").remove([oldPath]);
           } catch (error) {
             console.error("Ошибка при удалении старого аватара:", error);
-            // Продолжаем выполнение, даже если не удалось удалить старый аватар
           }
         }
 
-        // Загружаем новый аватар
         const fileExt = avatarFile.originalname.split(".").pop();
-        const fileName = `avatars/${Date.now()}-${Math.random()
-          .toString(36)
-          .substring(7)}.${fileExt}`;
+        const fileName = `avatars/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from("avatars")
@@ -573,45 +378,32 @@ export class SellerController {
           });
 
         if (uploadError) {
-          console.error("Ошибка загрузки аватара:", uploadError);
           return res.status(500).json({
             message: "Ошибка при загрузке аватара",
             error: uploadError.message,
           });
         }
 
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from("avatars").getPublicUrl(uploadData.path);
-
+        const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(uploadData.path);
         avatarUrl = publicUrl;
       }
 
-      // Обновляем данные пользователя
-      const userUpdateData: any = {
-        updated_at: new Date().toISOString(),
-      };
-
+      const userUpdateData: any = { updated_at: new Date().toISOString() };
       if (firstName) userUpdateData.first_name = firstName;
       if (lastName) userUpdateData.last_name = lastName;
       if (password) {
-        const saltRounds = 10;
-        userUpdateData.password = await bcrypt.hash(password, saltRounds);
+        userUpdateData.password = await bcrypt.hash(password, 10);
       }
 
       const { error: userUpdateError } = await supabase
         .from("users")
         .update(userUpdateData)
-        .eq("id", payload.userId);
+        .eq("id", req.user!.userId);
 
       if (userUpdateError) {
-        console.error("Ошибка при обновлении пользователя:", userUpdateError);
-        // Если был загружен новый аватар, удаляем его при ошибке
         if (avatarUrl) {
           const path = avatarUrl.split("/avatars/")[1];
-          if (path) {
-            await supabase.storage.from("avatars").remove([path]);
-          }
+          if (path) await supabase.storage.from("avatars").remove([path]);
         }
         return res.status(500).json({
           message: "Ошибка при обновлении данных пользователя",
@@ -619,11 +411,7 @@ export class SellerController {
         });
       }
 
-      // Обновляем данные продавца
-      const sellerUpdateData: any = {
-        updated_at: new Date().toISOString(),
-      };
-
+      const sellerUpdateData: any = { updated_at: new Date().toISOString() };
       if (phone !== undefined) sellerUpdateData.phone = phone;
       if (description !== undefined) sellerUpdateData.description = description;
       if (avatarUrl !== undefined) sellerUpdateData.avatarUrl = avatarUrl;
@@ -631,16 +419,12 @@ export class SellerController {
       const { error: sellerUpdateError } = await supabase
         .from("sellers")
         .update(sellerUpdateData)
-        .eq("user_id", payload.userId);
+        .eq("user_id", req.user!.userId);
 
       if (sellerUpdateError) {
-        console.error("Ошибка при обновлении продавца:", sellerUpdateError);
-        // Если был загружен новый аватар, удаляем его при ошибке
         if (avatarUrl) {
           const path = avatarUrl.split("/avatars/")[1];
-          if (path) {
-            await supabase.storage.from("avatars").remove([path]);
-          }
+          if (path) await supabase.storage.from("avatars").remove([path]);
         }
         return res.status(500).json({
           message: "Ошибка при обновлении данных продавца",
@@ -648,11 +432,8 @@ export class SellerController {
         });
       }
 
-      return res.status(200).json({
-        message: "Профиль успешно обновлен",
-      });
+      return res.status(200).json({ message: "Профиль успешно обновлен" });
     } catch (error) {
-      console.error("Неожиданная ошибка:", error);
       return res.status(500).json({
         message: "Внутренняя ошибка сервера",
         error: error instanceof Error ? error.message : "Неизвестная ошибка",
@@ -660,31 +441,23 @@ export class SellerController {
     }
   }
 
-  static async getDashboardStats(req: Request, res: Response) {
+  static async getDashboardStats(req: AuthRequest, res: Response) {
     try {
-      const token = req.cookies.token;
-      if (!token) return res.status(401).json({ message: "Не авторизован" });
-      const payload = await JWTUtils.verify(token);
-      if (!payload) return res.status(401).json({ message: "Не авторизован" });
-
-      const sellerId = payload.userId;
+      const sellerId = req.user!.userId;
 
       const { data: orderItems, error } = await supabase
         .from("order_items")
-        .select(
-          `
+        .select(`
           order_id,
           quantity, 
           price_at_purchase, 
           created_at,
           products (id, title, images)
-        `,
-        )
+        `)
         .eq("seller_id", sellerId);
 
       if (error) throw error;
-      if (!orderItems)
-        return res.status(200).json({ chartData: {}, topProducts: [] });
+      if (!orderItems) return res.status(200).json({ chartData: {}, topProducts: [] });
 
       const productStats: Record<string, any> = {};
 
@@ -706,18 +479,16 @@ export class SellerController {
       });
 
       let totalRevenue = 0;
-      const uniqueOrders = new Set(); // Используем Set, чтобы считать только уникальные заказы
+      const uniqueOrders = new Set();
 
       orderItems.forEach((item: any) => {
         totalRevenue += item.quantity * item.price_at_purchase;
-        if (item.order_id) {
-          uniqueOrders.add(item.order_id);
-        }
+        if (item.order_id) uniqueOrders.add(item.order_id);
       });
 
       const { count: totalProducts, error: productsError } = await supabase
         .from("products")
-        .select("id", { count: "exact", head: true }) // head: true означает, что мы просим БД вернуть только число, без самих данных (оптимизация)
+        .select("id", { count: "exact", head: true })
         .eq("seller_id", sellerId);
 
       if (productsError) throw productsError;
@@ -731,7 +502,6 @@ export class SellerController {
 
       orderItems.forEach((item: any) => {
         const date = new Date(item.created_at);
-        // Проверяем, что заказ был сделан за последние 7 дней
         const now = new Date();
         const diffTime = Math.abs(now.getTime() - date.getTime());
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -739,9 +509,7 @@ export class SellerController {
         if (diffDays <= 7) {
           const dayName = weekDays[date.getDay()];
           const dayObj = weekData.find((d) => d.name === dayName);
-          if (dayObj) {
-            dayObj.value += item.quantity * item.price_at_purchase; // Считаем доход (или можно считать количество)
-          }
+          if (dayObj) dayObj.value += item.quantity * item.price_at_purchase;
         }
       });
 
@@ -749,9 +517,8 @@ export class SellerController {
         totalRevenue,
         totalOrders: uniqueOrders.size,
         totalProducts: totalProducts || 0,
-        topProducts, // То, что мы делали ранее
+        topProducts,
         chartData: {
-          // То, что мы делали ранее
           Week: weekData,
           Day: [],
           Month: [],
@@ -764,25 +531,12 @@ export class SellerController {
     }
   }
 
-  static async handleCancellation(req: Request, res: Response) {
+  static async handleCancellation(req: AuthRequest, res: Response) {
     try {
-      const token = req.cookies.token;
-      if (!token) return res.status(401).json({ message: "Не авторизован" });
-
-      const payload = await JWTUtils.verify(token);
-      if (!payload) return res.status(401).json({ message: "Не авторизован" });
-
-      if (payload.role !== UserRole.SELLER) {
-        return res.status(403).json({ message: "Доступ запрещен" });
-      }
-
-      const sellerId = payload.userId;
-
+      const sellerId = req.user!.userId;
       const orderItemId = req.params.id;
-      // action: 'approve_client', 'reject_client', 'cancel_by_seller'
       const { action, reason } = req.body;
 
-      // Проверяем, что товар принадлежит этому продавцу
       const { data: item, error: itemError } = await supabase
         .from("order_items")
         .select("id, status")
@@ -790,11 +544,11 @@ export class SellerController {
         .eq("seller_id", sellerId)
         .single();
 
-      if (itemError || !item)
-        return res.status(403).json({ message: "Товар не найден", error: itemError});
+      if (itemError || !item) {
+        return res.status(403).json({ message: "Товар не найден", error: itemError });
+      }
 
       if (action === "cancel_by_seller") {
-        // Продавец сам отменяет заказ (например, нет в наличии)
         await supabase.from("cancellation_requests").insert({
           order_item_id: orderItemId,
           reason: reason || "Отменено продавцом",
@@ -802,43 +556,39 @@ export class SellerController {
           initiated_by: "seller",
         });
 
-        // Сразу меняем статус товара
         await supabase
           .from("order_items")
           .update({ status: "cancelled" })
           .eq("id", orderItemId);
+
         return res.status(200).json({ message: "Товар успешно отменен" });
       } else if (action === "approve_client" || action === "reject_client") {
-        // Обработка запроса от клиента
         const newStatus = action === "approve_client" ? "approved" : "rejected";
 
-        // Обновляем статус реквеста
         await supabase
           .from("cancellation_requests")
           .update({ status: newStatus })
           .eq("order_item_id", orderItemId)
-          .eq("status", "pending"); // Защита от двойного клика
+          .eq("status", "pending");
 
-        // Если одобрили - меняем статус самого товара
         if (newStatus === "approved") {
           await supabase
             .from("order_items")
             .update({ status: "cancelled" })
             .eq("id", orderItemId);
         } else {
-          // Если отклонили - возвращаем статус товара обратно в обработку
           await supabase
             .from("order_items")
             .update({ status: "processing" })
             .eq("id", orderItemId);
         }
 
-        return res
-          .status(200)
-          .json({
-            message: `Запрос ${newStatus === "approved" ? "одобрен" : "отклонен"}`,
-          });
+        return res.status(200).json({
+          message: `Запрос ${newStatus === "approved" ? "одобрен" : "отклонен"}`,
+        });
       }
+
+      return res.status(400).json({ message: "Неизвестное действие" });
     } catch (error) {
       console.error("Seller Cancellation Error:", error);
       return res.status(500).json({ message: "Ошибка сервера" });

@@ -1,39 +1,23 @@
-import { Request, Response } from "express";
+import { Response } from "express";
 import { supabase } from "../server";
-import { JWTUtils } from "../utils/jwt";
+import { AuthRequest } from "../middleware/auth";
 import { UserRole } from "../types";
 
 export class ChatController {
-  static async getOrCreateChat(req: Request, res: Response) {
+  static async getOrCreateChat(req: AuthRequest, res: Response) {
     try {
-      const token = req.cookies.token;
-
-      if (!token) {
-        return res.status(401).json({ message: "Неавторизован" });
-      }
-
-      const payload = await JWTUtils.verify(token);
-
-      if (
-        !payload ||
-        (payload.role !== UserRole.CLIENT && payload.role !== UserRole.SELLER)
-      ) {
-        return res.status(403).json({ message: "Доступ запрещен" });
-      }
-
       let clientId: string;
       let sellerId: string;
 
-      if (payload.role === UserRole.CLIENT) {
-        clientId = payload.userId;
+      if (req.user!.role === UserRole.CLIENT) {
+        clientId = req.user!.userId;
         sellerId = req.body.sellerId;
 
         if (!sellerId) {
           return res.status(400).json({ message: "Не указан sellerId" });
         }
       } else {
-        // Запрос пришел от продавца
-        sellerId = payload.userId;
+        sellerId = req.user!.userId;
         clientId = req.body.clientId;
 
         if (!clientId) {
@@ -41,7 +25,6 @@ export class ChatController {
         }
       }
 
-      // 1. Ищем чат по обоим ID
       let { data: chat, error: chatError } = await supabase
         .from("chats")
         .select("id")
@@ -50,13 +33,9 @@ export class ChatController {
         .maybeSingle();
 
       if (chatError) {
-        return res.status(500).json({
-          success: false,
-          message: chatError.message,
-        });
+        return res.status(500).json({ success: false, message: chatError.message });
       }
 
-      // 2. Если не нашли — создаем
       if (!chat) {
         const { data: newChat, error: newChatError } = await supabase
           .from("chats")
@@ -65,10 +44,7 @@ export class ChatController {
           .single();
 
         if (newChatError) {
-          return res.status(500).json({
-            success: false,
-            message: newChatError.message,
-          });
+          return res.status(500).json({ success: false, message: newChatError.message });
         }
 
         chat = newChat;
@@ -81,16 +57,10 @@ export class ChatController {
     }
   }
 
-  static async getChatMessages(req: Request, res: Response) {
+  static async getChatMessages(req: AuthRequest, res: Response) {
     try {
       const { chatId } = req.params;
-      const token = req.cookies.token;
 
-      if (!token) return res.status(401).json({ message: "Неавторизован" });
-      const payload = await JWTUtils.verify(token);
-      if (!payload) return res.status(401).json({ message: "Неавторизован" });
-
-      // 1. Проверяем, имеет ли юзер доступ к этому чату
       const { data: chat, error: chatError } = await supabase
         .from("chats")
         .select("client_id, seller_id")
@@ -101,15 +71,10 @@ export class ChatController {
         return res.status(404).json({ message: "Чат не найден" });
       }
 
-      // Если это не клиент этого чата и не продавец этого чата - блочим
-      if (
-        payload.userId !== chat.client_id &&
-        payload.userId !== chat.seller_id
-      ) {
+      if (req.user!.userId !== chat.client_id && req.user!.userId !== chat.seller_id) {
         return res.status(403).json({ message: "Чужой чат" });
       }
 
-      // 2. Достаем сообщения, сортируем от старых к новым (чтобы читать сверху вниз)
       const { data: messages, error: msgError } = await supabase
         .from("messages")
         .select("*")
@@ -118,32 +83,21 @@ export class ChatController {
 
       if (msgError) throw msgError;
 
-      // 3. Узнаем ID собеседника (нужно для фронтенда)
       const companionId =
-        payload.userId === chat.client_id ? chat.seller_id : chat.client_id;
+        req.user!.userId === chat.client_id ? chat.seller_id : chat.client_id;
 
-      return res.status(200).json({
-        messages: messages || [],
-        companionId,
-      });
+      return res.status(200).json({ messages: messages || [], companionId });
     } catch (error) {
       console.error("Get messages error:", error);
       return res.status(500).json({ message: "Внутренняя ошибка сервера" });
     }
   }
 
-  static async getMyChats(req: Request, res: Response) {
+  static async getMyChats(req: AuthRequest, res: Response) {
     try {
-      const token = req.cookies.token;
-      if (!token) return res.status(401).json({ message: "Неавторизован" });
+      const userId = req.user!.userId;
+      const role = req.user!.role;
 
-      const payload = await JWTUtils.verify(token);
-      if (!payload) return res.status(401).json({ message: "Неавторизован" });
-
-      const userId = payload.userId;
-      const role = payload.role; // 'client' или 'seller'
-
-      // 1. Ищем чаты в зависимости от роли
       let chatQuery = supabase.from("chats").select(`
         id,
         client_id,
@@ -167,11 +121,8 @@ export class ChatController {
       if (chatsError) throw chatsError;
       if (!chats || chats.length === 0) return res.status(200).json([]);
 
-      // 2. Достаем последние сообщения и считаем непрочитанные
-      // Используем Promise.all для параллельного выполнения запросов
       const chatsWithDetails = await Promise.all(
         chats.map(async (chat) => {
-          // А) Получаем только ОДНО самое свежее сообщение
           const { data: lastMsg } = await supabase
             .from("messages")
             .select("text, created_at, is_read, sender_id")
@@ -180,17 +131,16 @@ export class ChatController {
             .limit(1)
             .maybeSingle();
 
-          // Б) Считаем количество непрочитанных (где мы НЕ авторы)
           const { count: unreadCount } = await supabase
             .from("messages")
             .select("id", { count: "exact", head: true })
             .eq("chat_id", chat.id)
             .eq("is_read", false)
-            .neq("sender_id", userId); // Только те, что написали нам
+            .neq("sender_id", userId);
 
           let displayInfo = { full_name: "", avatar_url: null };
 
-          if (payload.role === UserRole.CLIENT) {
+          if (role === UserRole.CLIENT) {
             displayInfo = {
               full_name: (chat as any).sellers?.storeName || "Магазин",
               avatar_url: (chat as any).sellers?.avatarUrl || null,
@@ -199,8 +149,7 @@ export class ChatController {
             const u = (chat as any).users;
             displayInfo = {
               full_name: u ? `${u.first_name} ${u.last_name}` : "Клиент",
-              avatar_url:
-                (chat as any).users?.customers?.[0]?.avatar_url || null,
+              avatar_url: (chat as any).users?.customers?.[0]?.avatar_url || null,
             };
           }
 
@@ -213,14 +162,9 @@ export class ChatController {
         }),
       );
 
-      // 3. Сортируем: чаты со свежими сообщениями поднимаем наверх
       chatsWithDetails.sort((a, b) => {
-        const dateA = a.lastMessage
-          ? new Date(a.lastMessage.created_at).getTime()
-          : 0;
-        const dateB = b.lastMessage
-          ? new Date(b.lastMessage.created_at).getTime()
-          : 0;
+        const dateA = a.lastMessage ? new Date(a.lastMessage.created_at).getTime() : 0;
+        const dateB = b.lastMessage ? new Date(b.lastMessage.created_at).getTime() : 0;
         return dateB - dateA;
       });
 

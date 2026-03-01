@@ -282,8 +282,10 @@ static async sellerSignup(req: Request, res: Response) {
   static async getUser(req: Request, res: Response) {
     try {
       const authHeader = req.headers.authorization;
-      const tokenFromHeader = authHeader?.startsWith("Bearer ") ? authHeader.split(" ")[1] : null;
-      
+      const tokenFromHeader = authHeader?.startsWith("Bearer ")
+        ? authHeader.split(" ")[1]
+        : null;
+
       const token = req.cookies.token || tokenFromHeader;
 
       if (!token) {

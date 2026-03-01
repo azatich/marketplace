@@ -1,13 +1,15 @@
 import express from "express";
 import { ClientController } from "../controllers/clientController";
 import multer from "multer";
+import { requireAuth, requireRole } from "../middleware/auth";
+import { UserRole } from "../types";
 
 const router = express.Router();
 
 const upload = multer({ 
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB максимум на файл
+    fileSize: 10 * 1024 * 1024,
   },
   fileFilter: (req, file, cb) => {
     if (file.fieldname === 'avatar' && !file.mimetype.startsWith('image/')) {
@@ -17,11 +19,13 @@ const upload = multer({
   },
 });
 
+// Публичные маршруты (без авторизации — каталог доступен всем)
 router.get("/products", ClientController.getProducts);
 router.get("/products/:id", ClientController.getProductById);
 router.get("/categories", ClientController.getCategories);
-router.put('/profile', upload.single('avatar'), ClientController.updateProfile)
-router.post('/request-cancellation', ClientController.requestCancellation)
+
+// Защищённые маршруты (только клиент)
+router.put('/profile', requireAuth, requireRole(UserRole.CLIENT), upload.single('avatar'), ClientController.updateProfile);
+router.post('/request-cancellation', requireAuth, requireRole(UserRole.CLIENT), ClientController.requestCancellation);
 
 export default router;
-

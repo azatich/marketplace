@@ -1,8 +1,8 @@
 import { supabase } from "../server";
 import { Request, Response } from "express";
-import { JWTUtils } from "../utils/jwt";
 import { UserRole } from "../types";
 import bcrypt from "bcryptjs";
+import { AuthRequest } from "../middleware/auth";
 
 export class ClientController {
   static async getProducts(req: Request, res: Response) {
@@ -278,16 +278,8 @@ export class ClientController {
     }
   }
 
-  static async updateProfile(req: Request, res: Response) {
+  static async updateProfile(req: AuthRequest, res: Response) {
     try {
-      const token = req.cookies.token;
-      if (!token) return res.status(401).json({ message: "Неавторизован" });
-
-      const payload = await JWTUtils.verify(token);
-      if (!payload || payload.role !== UserRole.CLIENT) {
-        return res.status(403).json({ message: "Доступ запрещен" });
-      }
-
       const {
         first_name,
         last_name,
@@ -305,7 +297,7 @@ export class ClientController {
       const { data: clientData, error: clientError } = await supabase
         .from("customers")
         .select("user_id, avatar_url")
-        .eq("user_id", payload.userId)
+        .eq("user_id", req.user!.userId)
         .single();
 
       if (clientError || !clientData) {
@@ -352,14 +344,13 @@ export class ClientController {
         const { error: uError } = await supabase
           .from("users")
           .update(userUpdateData)
-          .eq("id", payload.userId);
+          .eq("id", req.user!.userId);
         if (uError) throw uError;
       }
 
-      // 4. Обновление таблицы CUSTOMERS
       const clientUpdateData: any = {
         updated_at: new Date().toISOString(),
-        avatar_url: avatarUrl, // Обновляем ссылку на аватар
+        avatar_url: avatarUrl,
       };
 
       if (username !== undefined) clientUpdateData.username = username;
@@ -367,16 +358,15 @@ export class ClientController {
       if (gender !== undefined) clientUpdateData.gender = gender;
       if (birth_date !== undefined) clientUpdateData.birth_date = birth_date;
 
-      // Обработка адресов (парсим из строки JSON)
       if (addresses !== undefined) {
         clientUpdateData.addresses =
           typeof addresses === "string" ? JSON.parse(addresses) : addresses;
       }
 
       const { error: cError } = await supabase
-        .from("customers") // ИСПРАВЛЕНО: была таблица sellers
+        .from("customers")
         .update(clientUpdateData)
-        .eq("user_id", payload.userId);
+        .eq("user_id", req.user!.userId);
 
       if (cError) throw cError;
 
@@ -392,17 +382,9 @@ export class ClientController {
     }
   }
 
-  static async requestCancellation(req: Request, res: Response) {
+  static async requestCancellation(req: AuthRequest, res: Response) {
     try {
-      const token = req.cookies.token;
-      if (!token) return res.status(401).json({ message: "Неавторизован" });
-
-      const payload = await JWTUtils.verify(token);
-      if (!payload || payload.role !== UserRole.CLIENT) {
-        return res.status(403).json({ message: "Доступ запрещен" });
-      }
-
-      const clientId = payload.userId;
+      const clientId = req.user!.userId;
       const { orderItemId, reason } = req.body;
 
       if (!orderItemId || !reason) {
