@@ -9,8 +9,8 @@ const onlineUsers = new Map<string, string>();
 export const initWebSocket = (httpServer: HttpServer) => {
   const io = new Server(httpServer, {
     cors: {
-      origin: "http://localhost:3000", // Укажи порт своего Next.js (обычно 3000)
-      credentials: true, // Обязательно для куки/токенов
+      origin: ["http://localhost:3000", "https://youmarket-azat.vercel.app"],
+      credentials: true,
     },
   });
 
