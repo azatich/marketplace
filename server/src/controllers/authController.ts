@@ -244,6 +244,7 @@ static async sellerSignup(req: Request, res: Response) {
       res.status(200).json({
         success: true,
         message: "Успешный вход",
+        token,
         data: {
           user: userWithoutPassword,
         },
@@ -261,6 +262,9 @@ static async sellerSignup(req: Request, res: Response) {
     try {
       res.clearCookie('token', {
         httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
       })
 
       return res.status(200).json({
@@ -277,7 +281,10 @@ static async sellerSignup(req: Request, res: Response) {
 
   static async getUser(req: Request, res: Response) {
     try {
-      const token = req.cookies.token
+      const authHeader = req.headers.authorization;
+      const tokenFromHeader = authHeader?.startsWith("Bearer ") ? authHeader.split(" ")[1] : null;
+      
+      const token = req.cookies.token || tokenFromHeader;
 
       if (!token) {
         return res.status(401).json({
@@ -368,7 +375,11 @@ static async sellerSignup(req: Request, res: Response) {
       });
 
     } catch (error) {
-      
+      console.error("Get user error:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Внутренняя ошибка сервера",
+      });
     }
   }
 }
