@@ -7,12 +7,14 @@ const roleBasedHomes = {
   admin: "/admin/clients",
 };
 
+const publicRoutes = ["/"];
+
 const authRoutes = ["/signup", "/signup-seller", "/login"];
 
 const protectedZones = {
   admin: ["/admin"], 
-  seller: ["/seller/dashboard", "/products", "/seller", "/settings"],
-  client: ["/cart", "/orders", "/profile"],
+  seller: ["/seller/dashboard", "seller/products", "/seller/orders", "seller/settings", "seller/chats"],
+  client: ["/cart", "/orders", "/profile", '/catalog'],
 };
 
 async function verifyToken(token: string) {
@@ -30,19 +32,19 @@ export async function middleware(req: NextRequest) {
   const token = req.cookies.get("token")?.value;
 
   const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));
+  const isPublicRoute = publicRoutes.includes(pathname);
 
   if (!token) {
-    console.log(`[middleware] no token, pathname=${pathname}, isAuthRoute=${isAuthRoute}`);
-    if (isAuthRoute) {
+    if (isAuthRoute || isPublicRoute) {
       return NextResponse.next();
     }
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
+
   const user = await verifyToken(token);
 
   if (!user) {
-    console.log(`[middleware] token invalid/expired, redirecting to /login`);
     const res = NextResponse.redirect(new URL("/login", req.url));
     res.cookies.delete("token");
     return res;
@@ -50,11 +52,10 @@ export async function middleware(req: NextRequest) {
 
   const role = user.role;
   const homeRoute = roleBasedHomes[role];
-  
-  if (pathname === "/" || isAuthRoute) {
+
+  if (isAuthRoute) {
     return NextResponse.redirect(new URL(homeRoute, req.url));
   }
-
 
   const isAdminZone = protectedZones.admin.some((r) => pathname.startsWith(r));
   if (isAdminZone && role !== "admin") {
