@@ -182,7 +182,7 @@ export default function ClientChatPage({
                   <span>{time}</span>
                   {isMine &&
                     (msg.is_read ? (
-                      <CheckCheck className="w-3.5 h-3.5 text-blue-200" />
+                      <CheckCheck className="w-3.5 h-3.5 text-white" />
                     ) : (
                       <Check className="w-3 h-3 text-white/70" />
                     ))}
