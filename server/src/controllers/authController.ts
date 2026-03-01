@@ -63,13 +63,6 @@ export class AuthController {
         role: UserRole.CLIENT,
       });
 
-      res.cookie('token', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 1000 * 3600 * 24 * 7,
-      });
-
       const response: SignUpResponse = {
         success: true,
         message: "Регистрация успешна",
@@ -235,12 +228,6 @@ static async sellerSignup(req: Request, res: Response) {
 
       const { password, ...userWithoutPassword } = user;
 
-      res.cookie('token', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 1000 * 3600 * 24 * 7,
-      })
       res.status(200).json({
         success: true,
         message: "Успешный вход",

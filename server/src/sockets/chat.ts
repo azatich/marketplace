@@ -16,11 +16,7 @@ export const initWebSocket = (httpServer: HttpServer) => {
 
   io.use(async (socket, next) => {
     try {
-      const cookieHeader = socket.request.headers.cookie;
-      if (!cookieHeader) return next(new Error("No cookies found"));
-
-      const cookies = cookie.parse(cookieHeader);
-      const token = cookies.token;
+      const token = socket.handshake.auth.token;
       if (!token) return next(new Error("No token found"));
 
       const payload = await JWTUtils.verify(token);
