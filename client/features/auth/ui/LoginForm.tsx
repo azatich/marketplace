@@ -35,11 +35,10 @@ export const LoginForm = () => {
             data.data.user.role;
 
           showSuccessToast(data.message || "Успешный вход в систему");
-          if (userRole && roleBasedRoutes[userRole]) {
-            router.push(roleBasedRoutes[userRole]);
-          } else {
-            router.push("/");
-          }
+
+          const redirectUrl = userRole &&  roleBasedRoutes[userRole] ? roleBasedRoutes[userRole] : '/'
+
+          window.location.href = redirectUrl;
         },
         onError: (err) => {
           console.log(err);

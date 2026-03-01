@@ -1,6 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
-import { api } from "../../../../../lib/api";
+import { api } from "../../../lib/api";
 import { SignupRequest } from "../types";
+import Cookies from "js-cookie";
 
 export const useSignUp = () => {
   return useMutation({
@@ -9,8 +10,8 @@ export const useSignUp = () => {
       return res.data;
     },
     onSuccess: (data) => {
-      if (data.data?.token) {
-        localStorage.setItem("token", data.data.token);
+      if (data.token) {
+        Cookies.set("token", data.token, { expires: 7, path: "/" });
       }
     },
   });

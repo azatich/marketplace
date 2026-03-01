@@ -4,7 +4,7 @@ import { Search, Bell, ChevronDown, User, Menu } from "lucide-react"; // Доб�
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useLogout } from "@/features/seller/ui/auth";
+import { useLogout } from "@/features/auth";
 import { useSellerProfile } from "../hooks/useSellerProfile";
 
 export function Header({ onOpenMobile }: { onOpenMobile: () => void }) {
