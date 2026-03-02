@@ -11,7 +11,7 @@ import {
   CheckCheck,
   Trash2,
   X,
-  Ban, // Не забудь добавить импорт Ban
+  Ban,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useSellerProfile } from "@/features/seller";
@@ -35,11 +35,11 @@ export default function SellerChatPage({
 
   const [inputValue, setInputValue] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  const isAtBottomRef = useRef(true);
 
   const [isSelectionMode, setIsSelectionMode] = useState(false);
-  const [selectedMessages, setSelectedMessages] = useState<Set<string>>(
-    new Set(),
-  );
+  const [selectedMessages, setSelectedMessages] = useState<Set<string>>(new Set());
 
   const {
     messages,
@@ -53,14 +53,10 @@ export default function SellerChatPage({
 
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const scrollToBottom = () => {
-    if (!isSelectionMode) {
+  useEffect(() => {
+    if (!isSelectionMode && isAtBottomRef.current) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
-  };
-
-  useEffect(() => {
-    scrollToBottom();
   }, [messages, isSelectionMode]);
 
   const toggleSelection = (messageId: string) => {
@@ -82,11 +78,9 @@ export default function SellerChatPage({
 
   const handleDeleteSelected = (forEveryone: boolean) => {
     if (selectedMessages.size === 0) return;
-
     if (deleteMessages) {
       deleteMessages(Array.from(selectedMessages), forEveryone);
     }
-
     cancelSelection();
   };
 
@@ -95,6 +89,11 @@ export default function SellerChatPage({
     if (!inputValue.trim()) return;
     sendMessage(inputValue);
     setInputValue("");
+    
+    isAtBottomRef.current = true;
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 100);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -104,6 +103,11 @@ export default function SellerChatPage({
     typingTimeoutRef.current = setTimeout(() => {
       sendTypingStatus(false);
     }, 2000);
+  };
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    isAtBottomRef.current = scrollHeight - scrollTop - clientHeight < 100;
   };
 
   if (!currentUserId || isLoading) {
@@ -123,10 +127,10 @@ export default function SellerChatPage({
 
   return (
     <div className="max-w-4xl mx-auto h-[calc(100vh-120px)] min-h-[500px] flex flex-col bg-[#1A1F2E]/80 backdrop-blur-xl border border-white/5 rounded-2xl overflow-hidden shadow-2xl">
+      
       {/* 1. ШАПКА ЧАТА */}
       <div className="flex items-center gap-4 p-4 sm:p-6 border-b border-white/5 bg-white/2 transition-colors">
         {isSelectionMode ? (
-          // Шапка в режиме выделения
           <>
             <button
               onClick={cancelSelection}
@@ -139,7 +143,6 @@ export default function SellerChatPage({
             </div>
           </>
         ) : (
-          // Обычная шапка
           <>
             <button
               onClick={() => router.back()}
@@ -169,51 +172,26 @@ export default function SellerChatPage({
               <div className="text-xs mt-0.5 h-4 flex items-center">
                 {isCompanionTyping ? (
                   <div className="flex items-center gap-1">
-                    <span className="text-[#8B7FFF] font-medium italic">
-                      печатает
-                    </span>
-                    <div className="flex gap-1">
-                      <motion.span
-                        animate={{ opacity: [0, 1, 0] }}
-                        transition={{ repeat: Infinity, duration: 1, delay: 0 }}
-                        className="w-1 h-1 bg-[#8B7FFF] rounded-full"
-                      />
-                      <motion.span
-                        animate={{ opacity: [0, 1, 0] }}
-                        transition={{
-                          repeat: Infinity,
-                          duration: 1,
-                          delay: 0.2,
-                        }}
-                        className="w-1 h-1 bg-[#8B7FFF] rounded-full"
-                      />
-                      <motion.span
-                        animate={{ opacity: [0, 1, 0] }}
-                        transition={{
-                          repeat: Infinity,
-                          duration: 1,
-                          delay: 0.4,
-                        }}
-                        className="w-1 h-1 bg-[#8B7FFF] rounded-full"
-                      />
+                    <span className="text-[#8B7FFF] font-medium italic text-[11px]">печатает</span>
+                    <div className="flex gap-0.5">
+                      <motion.span animate={{ opacity: [0, 1, 0] }} transition={{ repeat: Infinity, duration: 1 }} className="w-0.5 h-0.5 bg-[#8B7FFF] rounded-full" />
+                      <motion.span animate={{ opacity: [0, 1, 0] }} transition={{ repeat: Infinity, duration: 1, delay: 0.2 }} className="w-0.5 h-0.5 bg-[#8B7FFF] rounded-full" />
+                      <motion.span animate={{ opacity: [0, 1, 0] }} transition={{ repeat: Infinity, duration: 1, delay: 0.4 }} className="w-0.5 h-0.5 bg-[#8B7FFF] rounded-full" />
                     </div>
                   </div>
                 ) : isCompanionOnline ? (
-                  <span className="text-green-500 font-medium flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-500" />В
-                    сети
+                  <span className="text-green-500 font-medium flex items-center gap-1.5 text-[11px]">
+                    <span className="w-1 h-1 rounded-full bg-green-500" /> В сети
                   </span>
                 ) : (
-                  <span className="text-[#A0AEC0]">Был(а) недавно</span>
+                  <span className="text-[#A0AEC0] text-[11px]">Был(а) недавно</span>
                 )}
               </div>
             </div>
 
-            {/* Кнопка включения режима удаления */}
             <button
               onClick={() => setIsSelectionMode(true)}
               className="p-2 rounded-xl text-[#A0AEC0] hover:text-red-400 hover:bg-red-400/10 transition-colors"
-              title="Выбрать сообщения"
             >
               <Trash2 className="w-5 h-5" />
             </button>
@@ -222,7 +200,10 @@ export default function SellerChatPage({
       </div>
 
       {/* 2. СПИСОК СООБЩЕНИЙ */}
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 bg-[#0f121b]">
+      <div
+        onScroll={handleScroll}
+        className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 bg-[#0f121b] scroll-smooth"
+      >
         {messages.map((msg) => {
           const isMine = msg.sender_id === currentUserId;
           const isSelected = selectedMessages.has(msg.id);
@@ -231,8 +212,6 @@ export default function SellerChatPage({
             minute: "2-digit",
           }).format(new Date(msg.created_at));
 
-          // Проверяем новые флаги "Удалено у всех"
-          // ВНИМАНИЕ: Для продавца "isDeletedByMe" — это deleted_for_everyone_by_seller
           const isDeletedByMe = msg.deleted_for_everyone_by_seller;
           const isDeletedByThem = msg.deleted_for_everyone_by_client;
           const isDeletedForEveryone = isDeletedByMe || isDeletedByThem;
@@ -243,68 +222,37 @@ export default function SellerChatPage({
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               onClick={() => isSelectionMode && toggleSelection(msg.id)}
-              className={`flex flex-col relative ${isMine ? "items-end" : "items-start"} ${isSelectionMode ? "cursor-pointer" : ""}`}
+              className={`flex relative w-full ${isMine ? "justify-end" : "justify-start"} ${isSelectionMode ? "cursor-pointer" : ""}`}
             >
-              {/* Overlay для затемнения при выделении других сообщений */}
               {isSelectionMode && (
-                <div
-                  className={`absolute inset-0 -mx-4 px-4 z-0 transition-colors ${isSelected ? "bg-[#8B7FFF]/10" : "hover:bg-white/5"}`}
-                />
+                <div className={`absolute inset-0 -mx-4 px-4 z-0 transition-colors ${isSelected ? "bg-[#8B7FFF]/10" : "hover:bg-white/5"}`} />
               )}
 
-              <div
-                className={`relative z-10 flex items-center gap-3 ${isMine ? "flex-row-reverse" : "flex-row"}`}
-              >
-                {/* Чекбокс для режима выделения */}
+              <div className={`relative z-10 flex items-end gap-2 max-w-[85%] sm:max-w-[70%] ${isMine ? "flex-row-reverse" : "flex-row"}`}>
                 {isSelectionMode && (
-                  <div
-                    className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 transition-colors ${isSelected ? "bg-[#8B7FFF] border-[#8B7FFF]" : "border-[#A0AEC0] bg-transparent"}`}
-                  >
-                    {isSelected && <Check className="w-3.5 h-3.5 text-white" />}
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mb-1 transition-all ${isSelected ? "bg-[#8B7FFF] border-[#8B7FFF] scale-110" : "border-[#A0AEC0]/60"}`}>
+                    {isSelected && <Check className="w-3 h-3 text-white" />}
                   </div>
                 )}
 
-                {/* Пузырь сообщения */}
-                <div
-                  className={`max-w-[80%] sm:max-w-[65%] px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl text-sm sm:text-base shadow-sm transition-transform ${isSelectionMode && isSelected ? "scale-[0.98]" : ""} ${
-                    isMine
-                      ? "bg-linear-to-br from-[#8B7FFF] to-[#6DD5ED] text-white rounded-tr-sm"
-                      : "bg-[#1A1F2E] text-[#e2e8f0] border border-white/5 rounded-tl-sm"
-                  } ${isDeletedForEveryone ? "opacity-80" : ""}`}
-                >
-                  {/* Логика отображения текста в зависимости от того, кто удалил "У всех" */}
+                <div className={`px-4 py-2.5 sm:px-5 sm:py-3 rounded-2xl text-sm sm:text-base shadow-sm transition-transform ${isSelectionMode && isSelected ? "scale-[0.98]" : ""} ${isMine ? "bg-linear-to-br from-[#8B7FFF] to-[#6DD5ED] text-white rounded-tr-sm" : "bg-[#1A1F2E] text-[#e2e8f0] border border-white/5 rounded-tl-sm"} ${isDeletedForEveryone ? "opacity-80" : ""}`}>
                   {isDeletedByMe ? (
-                    <p className="flex items-center gap-2 italic text-white/70">
-                      <Ban className="h-3 w-3 shrink-0" />
-                      <span className="break-words">
-                        Вы удалили данное сообщение
-                      </span>
+                    <p className="flex items-center gap-2 italic text-white/70 text-xs sm:text-sm">
+                      <Ban className="w-3 h-3 shrink-0" /> <span>Вы удалили данное сообщение</span>
                     </p>
                   ) : isDeletedByThem ? (
-                    <p className="flex items-center gap-2 italic text-white/70">
-                      <Ban className="h-3 w-3 shrink-0" />
-                      <span className="break-words">
-                        Данное сообщение удалено
-                      </span>
+                    <p className="flex items-center gap-2 italic text-white/70 text-xs sm:text-sm">
+                      <Ban className="w-3 h-3 shrink-0" /> <span>Данное сообщение удалено</span>
                     </p>
                   ) : (
-                    <p className="break-words whitespace-pre-wrap">
-                      {msg.text}
-                    </p>
+                    <p className="whitespace-pre-wrap break-words">{msg.text}</p>
                   )}
 
-                  <div
-                    className={`flex items-center gap-1 mt-1 text-[10px] ${isMine ? "justify-end text-white/80" : "justify-start text-[#A0AEC0]"}`}
-                  >
+                  <div className={`flex items-center gap-1 mt-1 text-[10px] ${isMine ? "justify-end text-white/70" : "justify-start text-[#A0AEC0]"}`}>
                     <span>{time}</span>
-                    {/* Скрываем галочки прочтения, если сообщение удалено */}
-                    {!isDeletedForEveryone &&
-                      isMine &&
-                      (msg.is_read ? (
-                        <CheckCheck className="w-3.5 h-3.5 text-blue-200" />
-                      ) : (
-                        <Check className="w-3 h-3 text-white/70" />
-                      ))}
+                    {!isDeletedForEveryone && isMine && (
+                      msg.is_read ? <CheckCheck className="w-3.5 h-3.5" /> : <Check className="w-3 h-3 opacity-70" />
+                    )}
                   </div>
                 </div>
               </div>
@@ -314,11 +262,10 @@ export default function SellerChatPage({
         <div ref={messagesEndRef} />
       </div>
 
-      {/* 3. ФУТЕР (ИНПУТ ИЛИ ПАНЕЛЬ УДАЛЕНИЯ) */}
+      {/* 3. ФУТЕР */}
       <div className="p-4 sm:p-6 bg-[#1A1F2E] border-t border-white/5 relative overflow-hidden">
         <AnimatePresence mode="wait">
           {isSelectionMode ? (
-            // Панель массового удаления
             <motion.div
               key="delete-panel"
               initial={{ y: 50, opacity: 0 }}
@@ -326,16 +273,13 @@ export default function SellerChatPage({
               exit={{ y: 50, opacity: 0 }}
               className="flex items-center justify-between"
             >
-              <button
-                onClick={cancelSelection}
-                className="px-4 py-3 rounded-xl text-white hover:bg-white/5 font-medium transition-colors"
-              >
+              <button onClick={cancelSelection} className="px-4 py-3 rounded-xl text-white hover:bg-white/5 font-medium transition-colors">
                 Отмена
               </button>
 
               <div className="flex items-center gap-2">
                 <button
-                onClick={() => handleDeleteSelected(false)}
+                  onClick={() => handleDeleteSelected(false)} // ДОБАВЛЕНО: Теперь работает
                   disabled={selectedMessages.size === 0}
                   className="px-4 py-3 text-sm sm:text-base rounded-xl border border-white/10 hover:bg-white/5 disabled:opacity-50 text-white font-medium transition-all"
                 >
@@ -344,15 +288,13 @@ export default function SellerChatPage({
                 <button
                   onClick={() => handleDeleteSelected(true)}
                   disabled={!canDeleteForEveryone}
-                  className={`${!canDeleteForEveryone ? "hidden" : ""} px-4 py-3 text-sm sm:text-base rounded-xl bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white font-bold shadow-lg shadow-red-500/20 transition-all flex items-center gap-2`}
+                  className={`${!canDeleteForEveryone ? "hidden" : ""} px-4 py-3 text-sm sm:text-base rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold shadow-lg shadow-red-500/20 flex items-center gap-2 transition-all`}
                 >
-                  <Trash2 className="w-4 h-4 hidden sm:block" />
-                  Удалить у всех
+                  <Trash2 className="w-4 h-4 hidden sm:block" /> Удалить у всех
                 </button>
               </div>
             </motion.div>
           ) : (
-            // Обычный инпут ввода
             <motion.form
               key="input-panel"
               initial={{ y: 50, opacity: 0 }}
@@ -361,7 +303,7 @@ export default function SellerChatPage({
               onSubmit={handleSend}
               className="flex items-end gap-3"
             >
-              <div className="flex-1 bg-white/5 border border-white/10 rounded-2xl overflow-hidden focus-within:border-[#8B7FFF]/50 focus-within:bg-white/10 transition-colors">
+              <div className="flex-1 bg-white/5 border border-white/10 rounded-2xl overflow-hidden focus-within:border-[#8B7FFF]/50 transition-colors">
                 <textarea
                   value={inputValue}
                   onChange={handleInputChange}
@@ -379,7 +321,7 @@ export default function SellerChatPage({
               <button
                 type="submit"
                 disabled={!inputValue.trim()}
-                className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-[#8B7FFF] flex items-center justify-center text-white shrink-0 hover:bg-[#7a6ee6] active:scale-95 transition-all disabled:opacity-50 disabled:active:scale-100"
+                className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-[#8B7FFF] flex items-center justify-center text-white shrink-0 hover:bg-[#7a6ee6] active:scale-95 transition-all disabled:opacity-50"
               >
                 <Send className="w-5 h-5 ml-1" />
               </button>
