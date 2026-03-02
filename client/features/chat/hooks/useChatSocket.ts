@@ -1,9 +1,8 @@
-"use client";
-
 import { useEffect, useState, useRef, useCallback } from "react";
 import { io, Socket } from "socket.io-client";
 import { api } from "@/lib/api";
 import Cookies from "js-cookie";
+import { jwtDecode } from "jwt-decode"; // <-- ДОБАВИЛИ ИМПОРТ
 
 export interface Message {
   id: string;
@@ -12,6 +11,15 @@ export interface Message {
   text: string;
   is_read: boolean;
   created_at: string;
+  is_hidden_from_seller: boolean;
+  is_hidden_from_client: boolean;
+  deleted_for_everyone_by_client: boolean;
+  deleted_for_everyone_by_seller: boolean;
+}
+
+interface CustomJwtPayload {
+  userId: string;
+  role: "client" | "seller" | "admin";
 }
 
 export const useChatSocket = (chatId: string) => {
@@ -40,8 +48,32 @@ export const useChatSocket = (chatId: string) => {
           {
             withCredentials: true,
             auth: {
-              token: Cookies.get('token'),
-            }
+              token: Cookies.get("token"),
+            },
+          },
+        );
+
+        socketRef.current?.on(
+          "messages_deleted_for_everyone",
+          ({ ids, deletedByRole }) => {
+            setMessages((prev) =>
+              prev.map((msg) => {
+                if (ids.includes(msg.id)) {
+                  return {
+                    ...msg,
+                    deleted_for_everyone_by_client:
+                      deletedByRole === "client"
+                        ? true
+                        : msg.deleted_for_everyone_by_client,
+                    deleted_for_everyone_by_seller:
+                      deletedByRole === "seller"
+                        ? true
+                        : msg.deleted_for_everyone_by_seller,
+                  };
+                }
+                return msg;
+              }),
+            );
           },
         );
 
@@ -54,9 +86,9 @@ export const useChatSocket = (chatId: string) => {
           }
         });
 
-        socket.on('connect_error', (error) => {
-          console.error('Socket connection error:', error.message);
-        })
+        socket.on("connect_error", (error) => {
+          console.error("Socket connection error:", error.message);
+        });
 
         socket.on("user_typing", ({ userId, isTyping }) => {
           if (userId === res.data.companionId) {
@@ -68,11 +100,7 @@ export const useChatSocket = (chatId: string) => {
           setIsCompanionTyping(false);
           setMessages((prev) => {
             const isDuplicate = prev.some((msg) => msg.id === newMessage.id);
-
-            if (isDuplicate) {
-              return prev;
-            }
-
+            if (isDuplicate) return prev;
             return [...prev, newMessage];
           });
         });
@@ -135,6 +163,46 @@ export const useChatSocket = (chatId: string) => {
     [chatId],
   );
 
+  const deleteMessages = useCallback(
+    (ids: string[], forEveryone: boolean) => {
+      if (socketRef.current) {
+        socketRef.current.emit("delete_messages", { ids, chatId, forEveryone });
+
+        if (forEveryone) {
+          // ДИНАМИЧЕСКИ ДОСТАЕМ РОЛЬ ИЗ ТОКЕНА
+          let userRole = "client"; // по умолчанию
+          const token = Cookies.get("token");
+          if (token) {
+            try {
+              const decoded = jwtDecode<CustomJwtPayload>(token);
+              userRole = decoded.role;
+            } catch (error) {
+              console.error("Ошибка декодирования токена:", error);
+            }
+          }
+
+          setMessages((prev) =>
+            prev.map((msg) => {
+              if (ids.includes(msg.id)) {
+                return {
+                  ...msg,
+                  // Обновляем нужную колонку в зависимости от текущей роли
+                  deleted_for_everyone_by_client: userRole === "client" ? true : msg.deleted_for_everyone_by_client,
+                  deleted_for_everyone_by_seller: userRole === "seller" ? true : msg.deleted_for_everyone_by_seller,
+                };
+              }
+              return msg;
+            }),
+          );
+        } else {
+          // Удаление "только у себя" просто вырезает сообщения из UI
+          setMessages((prev) => prev.filter((msg) => !ids.includes(msg.id)));
+        }
+      }
+    },
+    [chatId],
+  );
+
   return {
     messages,
     isCompanionOnline,
@@ -143,6 +211,7 @@ export const useChatSocket = (chatId: string) => {
     sendTypingStatus,
     sendMessage,
     markAsRead,
+    deleteMessages,
     companionId,
   };
 };
