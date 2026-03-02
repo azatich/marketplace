@@ -2,6 +2,7 @@ import { Response } from "express";
 import { supabase } from "../server";
 import { AuthRequest } from "../middleware/auth";
 import { UserRole } from "../types";
+import { JWTUtils } from "../utils/jwt";
 
 export class ChatController {
   static async getOrCreateChat(req: AuthRequest, res: Response) {
@@ -60,6 +61,7 @@ export class ChatController {
   static async getChatMessages(req: AuthRequest, res: Response) {
     try {
       const { chatId } = req.params;
+      const role = req.user!.role;
 
       const { data: chat, error: chatError } = await supabase
         .from("chats")
@@ -75,10 +77,15 @@ export class ChatController {
         return res.status(403).json({ message: "Чужой чат" });
       }
 
+      const hiddenColumn = role === UserRole.SELLER 
+        ? "is_hidden_from_seller" 
+        : "is_hidden_from_client";
+
       const { data: messages, error: msgError } = await supabase
         .from("messages")
         .select("*")
         .eq("chat_id", chatId)
+        .eq(hiddenColumn, false)
         .order("created_at", { ascending: true });
 
       if (msgError) throw msgError;
@@ -97,6 +104,10 @@ export class ChatController {
     try {
       const userId = req.user!.userId;
       const role = req.user!.role;
+
+      const hiddenColumn = role === UserRole.SELLER 
+        ? "is_hidden_from_seller" 
+        : "is_hidden_from_client";
 
       let chatQuery = supabase.from("chats").select(`
         id,
@@ -126,6 +137,7 @@ export class ChatController {
           const { data: lastMsg } = await supabase
             .from("messages")
             .select("text, created_at, is_read, sender_id")
+            .eq(hiddenColumn, false)
             .eq("chat_id", chat.id)
             .order("created_at", { ascending: false })
             .limit(1)
@@ -136,7 +148,8 @@ export class ChatController {
             .select("id", { count: "exact", head: true })
             .eq("chat_id", chat.id)
             .eq("is_read", false)
-            .neq("sender_id", userId);
+            .neq("sender_id", userId)
+            .eq(hiddenColumn, false);
 
           let displayInfo = { full_name: "", avatar_url: null };
 

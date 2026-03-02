@@ -93,6 +93,50 @@ export const initWebSocket = (httpServer: HttpServer) => {
       socket.to(chatId).emit("messages_read");
     });
 
+    socket.on(
+      "delete_messages",
+      async (data: { ids: string[]; chatId: string; forEveryone: boolean }) => {
+        try {
+          const user = socket.data.user;
+          const { ids, chatId, forEveryone } = data;
+
+          if (forEveryone) {
+            const columnToUpdate =
+              user.role === "seller"
+                ? "deleted_for_everyone_by_seller"
+                : "deleted_for_everyone_by_client";
+
+            const { error } = await supabase
+              .from("messages")
+              .update({ [columnToUpdate]: true })
+              .eq("chat_id", chatId)
+              .in("id", ids);
+
+            if (!error) {
+              // Отправляем уведомление ТОЛЬКО собеседнику, чтобы у него изменился текст на "Удалено"
+              socket.to(chatId).emit("messages_deleted_for_everyone", {
+                ids,
+                deletedByRole: user.role,
+              });
+            }
+          } else {
+            const columnToUpdate =
+              user.role === "seller"
+                ? "is_hidden_from_seller"
+                : "is_hidden_from_client";
+
+            await supabase
+              .from("messages")
+              .update({ [columnToUpdate]: true })
+              .eq("chat_id", chatId)
+              .in("id", ids);
+          }
+        } catch (error) {
+          console.error("Delete messages error:", error);
+        }
+      },
+    );
+
     socket.on("disconnect", () => {
       onlineUsers.delete(user.userId);
       io.emit("user_status_change", { userId: user.userId, isOnline: false });
