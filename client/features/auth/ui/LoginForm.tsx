@@ -5,7 +5,7 @@ import { useLogin } from "../hooks/useLogin";
 import { AxiosError } from "axios";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { showErrorToast, showSuccessToast } from "@/lib/toasts";
+import { showErrorToast, showSuccessToast } from "@/app/shared/lib/toasts";
 
 const roleBasedRoutes = {
   client: "/catalog",

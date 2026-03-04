@@ -34,7 +34,6 @@ export default function ClientChatPage({
   const currentChat = chats.find((c) => c.id === chatId);
   const displayInfo = currentChat?.displayInfo;
 
-  // === СТЕЙТЫ ДЛЯ СКРОЛЛА И ВЫДЕЛЕНИЯ ===
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isAtBottomRef = useRef(true); // Следим, внизу ли пользователь
   const [isSelectionMode, setIsSelectionMode] = useState(false);

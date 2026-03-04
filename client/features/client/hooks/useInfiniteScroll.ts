@@ -1,5 +1,5 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { api } from "@/lib/api";
+import { api } from "@/app/shared/lib/api";
 
 interface Pagination {
   page: number;

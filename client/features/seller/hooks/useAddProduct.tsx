@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "../../../lib/api";
+import { api } from "../../../app/shared/lib/api";
 import { AddProductRequest } from "../types";
-import { showErrorToast, showSuccessToast } from "@/lib/toasts";
+import { showErrorToast, showSuccessToast } from "@/app/shared/lib/toasts";
 
 export const useAddProduct = () => {
   const queryClient = useQueryClient();

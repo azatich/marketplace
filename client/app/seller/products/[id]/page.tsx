@@ -1,13 +1,14 @@
 "use client";
 
 import { Spinner } from "@/components/ui/spinner";
-import { ProductCategories, useSingleProduct, useUpdateProduct } from "@/features/seller";
-import { calculateDiscount } from "@/lib/calculateDiscount";
-import { supabase } from "@/lib/supabaseClient";
+import { useSingleProduct, useUpdateProduct } from "@/features/seller";
+import { calculateDiscount } from "@/app/shared/lib/calculateDiscount";
+import { supabase } from "@/app/shared/lib/supabaseClient";
 import { ArrowLeft, Upload, X } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { showSuccessToast } from "@/lib/toasts";
+import { showSuccessToast } from "@/app/shared/lib/toasts";
+import { ProductCategories } from "@/app/shared/constants";
 
 const ProductEdit = () => {
   const params = useParams();

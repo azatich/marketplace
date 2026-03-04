@@ -13,7 +13,7 @@ import {
   Trash2,
   Lock
 } from "lucide-react";
-import { showErrorToast } from "@/lib/toasts";
+import { showErrorToast } from "@/app/shared/lib/toasts";
 import { InputField } from "@/features/client/ui/InputField";
 import { useClientProfile, useUpdateClientProfile } from "@/features/client";
 

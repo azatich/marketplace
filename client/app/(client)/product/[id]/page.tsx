@@ -3,17 +3,24 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useParams, useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, ShoppingCart, Store, User } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ShoppingCart,
+  Store,
+  User,
+} from "lucide-react";
 import { useProduct } from "@/features/client/hooks/useProduct";
-import { calculateDiscount } from "@/lib/calculateDiscount";
-import { ProductCategories } from "@/features/client/types";
-import { showSuccessToast, showErrorToast } from "@/lib/toasts";
+import { calculateDiscount } from "@/app/shared/lib/calculateDiscount";
+import { showSuccessToast, showErrorToast } from "@/app/shared/lib/toasts";
 import { useCartStore } from "@/features/client";
+import { ProductCategories, STORE_CATEGORIES } from "@/app/shared/constants";
 
 const ProductPage = () => {
   const params = useParams();
   const router = useRouter();
   const { data: product, isLoading } = useProduct(params.id as string);
+
   const { addToCart } = useCartStore();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
@@ -44,12 +51,17 @@ const ProductPage = () => {
     );
   }
 
-  const discount = calculateDiscount(product.price, product.discount_price || 0);
+  const discount = calculateDiscount(
+    product.price,
+    product.discount_price || 0,
+  );
   const finalPrice = product.discount_price || product.price;
-  const categoryData = ProductCategories[product.category as keyof typeof ProductCategories];
+  const categoryData =
+    ProductCategories[product.category as keyof typeof ProductCategories];
   const children = categoryData?.children as Record<string, string> | undefined;
   const categoryName = categoryData?.title || product.category;
-  const subcategoryName = children?.[product.subcategory] || product.subcategory;
+  const subcategoryName =
+    children?.[product.subcategory] || product.subcategory;
 
   const handleAddToCart = () => {
     if (quantity > product.quantity) {
@@ -65,7 +77,9 @@ const ProductPage = () => {
   };
 
   const prevImage = () => {
-    setCurrentImageIndex((prev) => (prev - 1 + product.images.length) % product.images.length);
+    setCurrentImageIndex(
+      (prev) => (prev - 1 + product.images.length) % product.images.length,
+    );
   };
 
   return (
@@ -131,7 +145,7 @@ const ProductPage = () => {
                 <button
                   key={index}
                   onClick={() => setCurrentImageIndex(index)}
-                  className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${
+                  className={`shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${
                     currentImageIndex === index
                       ? "border-[#8B7FFF]"
                       : "border-white/10 hover:border-white/30"
@@ -181,7 +195,9 @@ const ProductPage = () => {
 
           <div className="p-6 bg-[#1A1F2E]/80 backdrop-blur-xl border border-white/5 rounded-xl">
             <h2 className="text-lg font-semibold mb-4">Описание</h2>
-            <p className="text-[#A0AEC0] whitespace-pre-wrap">{product.description}</p>
+            <p className="text-[#A0AEC0] whitespace-pre-wrap">
+              {product.description}
+            </p>
           </div>
 
           {/* Seller Info */}
@@ -204,13 +220,26 @@ const ProductPage = () => {
                   </div>
                 )}
                 <div>
-                  <p className="font-semibold">{product.sellers.storeName}</p>
+                  <p className="font-semibold">
+                    {product.sellers.storeName} |{" "}
+                    {product.sellers.category
+                      .map(
+                        (value) =>
+                          STORE_CATEGORIES.find((cat) => cat.value === value)
+                            ?.label,
+                      )
+                      .filter(Boolean)
+                      .join(", ")}
+                  </p>
                   {product.sellers.users && (
                     <p className="text-sm text-[#A0AEC0]">
-                      {product.sellers.users.first_name} {product.sellers.users.last_name} {}
+                      {product.sellers.users.first_name}{" "}
+                      {product.sellers.users.last_name} {}
                     </p>
                   )}
-                  <p className="text-sm text-[#A0AEC0] mt-2">{product.sellers.phone}</p>
+                  <p className="text-sm text-[#A0AEC0] mt-2">
+                    {product.sellers.phone}
+                  </p>
                 </div>
               </div>
             </div>
@@ -239,7 +268,9 @@ const ProductPage = () => {
                   className="w-16 h-10 text-center bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#8B7FFF]/50"
                 />
                 <button
-                  onClick={() => setQuantity((prev) => Math.min(product.quantity, prev + 1))}
+                  onClick={() =>
+                    setQuantity((prev) => Math.min(product.quantity, prev + 1))
+                  }
                   className="w-10 h-10 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-colors"
                 >
                   +
@@ -267,4 +298,3 @@ const ProductPage = () => {
 };
 
 export default ProductPage;
-

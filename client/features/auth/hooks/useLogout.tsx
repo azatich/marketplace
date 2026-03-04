@@ -1,9 +1,9 @@
 'use client'
 
 import { useMutation } from "@tanstack/react-query";
-import { api } from "../../../lib/api";
+import { api } from "../../../app/shared/lib/api";
 import { useRouter } from "next/navigation";
-import { showErrorToast, showSuccessToast } from "@/lib/toasts";
+import { showErrorToast, showSuccessToast } from "@/app/shared/lib/toasts";
 import Cookies from "js-cookie";
 
 export const useLogout = () => {

@@ -3,8 +3,8 @@ import {
   UseMutationOptions,
   useQueryClient,
 } from "@tanstack/react-query";
-import { api } from "@/lib/api";
-import { showErrorToast } from "@/lib/toasts";
+import { api } from "@/app/shared/lib/api";
+import { showErrorToast } from "@/app/shared/lib/toasts";
 import { UpdatedProductItem } from "../types";
 
 export const useUpdateProduct = (

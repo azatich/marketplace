@@ -5,7 +5,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Search, Grid, List, Filter, X, Loader2 } from "lucide-react";
 import {
   Product,
-  ProductCategories,
   ProductFilters,
 } from "@/features/client/types";
 import { useRouter } from "next/navigation";
@@ -13,6 +12,7 @@ import { ProductCard, useCartStore } from "@/features/client";
 import { ProductListItem } from "@/features/client/ui/ProductListItem";
 import { useProductsInfinite } from "@/features/client/hooks/useInfiniteScroll";
 import { useInView } from "react-intersection-observer";
+import { ProductCategories } from "@/app/shared/constants";
 
 const CatalogPage = () => {
   const router = useRouter();

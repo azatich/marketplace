@@ -2,22 +2,26 @@ import { ShoppingCart } from "lucide-react";
 import React from "react";
 import { SellerFormData } from "../types";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  MultiSelect,
+  MultiSelectContent,
+  MultiSelectGroup,
+  MultiSelectItem,
+  MultiSelectTrigger,
+  MultiSelectValue,
+} from "@/components/ui/multi-select";
+import { STORE_CATEGORIES } from "@/app/shared/constants";
 
 export const SellerStepTwo = ({
   formData,
   setFormData,
-  errors
+  errors,
 }: {
   formData: SellerFormData;
   setFormData: React.Dispatch<React.SetStateAction<SellerFormData>>;
-  errors: Record<string, string>
+  errors: Record<string, string>;
 }) => {
+
+  
   return (
     <form className="space-y-4">
       <h3 className="text-sm font-semibold text-slate-900 mb-4">
@@ -34,11 +38,15 @@ export const SellerStepTwo = ({
           <input
             type="name"
             value={formData?.storeName}
-            onChange={(e) => setFormData({ ...formData, storeName: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, storeName: e.target.value })
+            }
             className="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm rounded-xl focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 block p-2.5 pl-10 outline-none transition-all"
           />
         </div>
-        {errors && errors.storeName && <span className="text-red-500 text-sm">{errors.storeName}</span>}
+        {errors && errors.storeName && (
+          <span className="text-red-500 text-sm">{errors.storeName}</span>
+        )}
       </div>
 
       <div className="space-y-1.5">
@@ -56,28 +64,35 @@ export const SellerStepTwo = ({
             required
           />
         </div>
-        {errors && errors.description && <span className="text-red-500 text-sm">{errors.description}</span>}
+        {errors && errors.description && (
+          <span className="text-red-500 text-sm">{errors.description}</span>
+        )}
       </div>
 
       <div>
         <label className="text-xs font-medium text-slate-700 ml-1">
           Категория
         </label>
-        <Select
-          value={formData?.category}
-          onValueChange={(value) =>
-            setFormData({ ...formData, category: value })
-          }
-        >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Выберите категорию" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="fashion">Одежды</SelectItem>
-            <SelectItem value="electronics">Электроника</SelectItem>
-          </SelectContent>
-        </Select>
-        {errors && errors.category && <span className="text-red-500 text-sm">{errors.category}</span>}
+        <MultiSelect onValuesChange={(values) => setFormData({...formData, category: values})}>
+          <MultiSelectTrigger className="w-full max-w-[400px]">
+            <MultiSelectValue placeholder="Выберите категорию" />
+          </MultiSelectTrigger>
+          <MultiSelectContent>
+            <MultiSelectGroup>
+              {STORE_CATEGORIES.map((category) => (
+                <MultiSelectItem
+                  key={category.value}
+                  value={category.value}
+                >
+                  {category.label}
+                </MultiSelectItem>
+              ))}
+            </MultiSelectGroup>
+          </MultiSelectContent>
+        </MultiSelect>
+        {errors && errors.category && (
+          <span className="text-red-500 text-sm">{errors.category}</span>
+        )}
       </div>
     </form>
   );

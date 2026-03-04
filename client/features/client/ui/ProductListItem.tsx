@@ -1,7 +1,7 @@
-import { calculateDiscount } from "@/lib/calculateDiscount";
+import { calculateDiscount } from "@/app/shared/lib/calculateDiscount";
 import { Product } from "../types";
 import {motion} from 'framer-motion'
-import { showSuccessToast } from "@/lib/toasts";
+import { showSuccessToast } from "@/app/shared/lib/toasts";
 
 export const ProductListItem = ({
   product,

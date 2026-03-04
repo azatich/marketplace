@@ -5,7 +5,7 @@ import { Camera, Save, User, Phone, FileText, Lock } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSellerProfile } from "@/features/seller/hooks/useSellerProfile";
 import { useUpdateSellerProfile } from "@/features/seller/hooks/useUpdateSellerProfile";
-import { showErrorToast } from "@/lib/toasts";
+import { showErrorToast } from "@/app/shared/lib/toasts";
 
 const SettingsPage = () => {
   const { data: profile, isLoading } = useSellerProfile();

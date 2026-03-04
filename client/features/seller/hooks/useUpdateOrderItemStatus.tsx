@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { OrderItemStatus } from "../types";
-import { api } from "@/lib/api";
-import { showErrorToast, showSuccessToast } from "@/lib/toasts";
+import { api } from "@/app/shared/lib/api";
+import { showErrorToast, showSuccessToast } from "@/app/shared/lib/toasts";
 import { OrderItem } from "@/features/client/types";
 
 interface UpdateStatusPayload {

@@ -4,7 +4,6 @@ import { SellerStepFour, SellerStepOne, SellerStepThree, SellerStepTwo } from "@
 import { useSignUpSeller } from "@/features/auth/hooks/useSignUpSeller";
 import { AxiosError } from "axios";
 import { Send, Store } from "lucide-react";
-import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 import { toast } from "sonner";
 
@@ -14,7 +13,7 @@ const SignUpSellerPage = () => {
     password: "",
     storeName: "",
     description: "",
-    category: "",
+    category: [''],
     sellerFirstName: "",
     sellerLastName: "",
     phone: "",
@@ -22,7 +21,6 @@ const SignUpSellerPage = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const { mutate, isPending, error: signupError } = useSignUpSeller();
-  const router = useRouter();
 
   const steps = [
     <SellerStepOne
@@ -96,19 +94,17 @@ const SignUpSellerPage = () => {
             className: "toast-success",
           });
 
-          console.log("Данные формы:", formData);
           setFormData({
             email: "",
             password: "",
             storeName: "",
             description: "",
-            category: "",
+            category: [''],
             sellerFirstName: "",
             sellerLastName: "",
             phone: "",
           });
           setCurrentStep(0);
-          // router.push("/"); // Убираем редирект, т.к. продавец еще не аутентифицирован
         },
         onError: (err) => {
           console.log(err);

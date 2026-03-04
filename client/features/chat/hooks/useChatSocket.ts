@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { io, Socket } from "socket.io-client";
-import { api } from "@/lib/api";
+import { api } from "@/app/shared/lib/api";
 import Cookies from "js-cookie";
 import { jwtDecode } from "jwt-decode"; // <-- ДОБАВИЛИ ИМПОРТ
 

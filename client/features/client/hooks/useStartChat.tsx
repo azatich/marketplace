@@ -1,7 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
-import { api } from "@/lib/api";
+import { api } from "@/app/shared/lib/api";
 import { useRouter } from "next/navigation";
-import { showErrorToast } from "@/lib/toasts";
+import { showErrorToast } from "@/app/shared/lib/toasts";
 
 export const useStartChat = () => {
   const router = useRouter();

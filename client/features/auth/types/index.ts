@@ -15,7 +15,7 @@ export interface SellerFormData {
     password: string
     storeName: string
     description: string
-    category: string
+    category: string[]
     sellerFirstName: string
     sellerLastName: string
     phone: string

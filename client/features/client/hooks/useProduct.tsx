@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { api } from "../../../lib/api";
+import { api } from "../../../app/shared/lib/api";
 import { Product } from "../types";
 
 export const useProduct = (id: string) => {

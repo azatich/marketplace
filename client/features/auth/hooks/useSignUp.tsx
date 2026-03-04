@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { api } from "../../../lib/api";
+import { api } from "../../../app/shared/lib/api";
 import { SignupRequest } from "../types";
 import Cookies from "js-cookie";
 

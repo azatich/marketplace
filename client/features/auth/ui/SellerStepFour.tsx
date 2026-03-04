@@ -1,6 +1,7 @@
 import React from "react";
 import { SellerFormData } from "../types";
 import { CircleCheckBig, Store } from "lucide-react";
+import { STORE_CATEGORIES } from "@/app/shared/constants";
 
 export const SellerStepFour = ({ formData }: { formData: SellerFormData }) => {
   return (
@@ -21,10 +22,16 @@ export const SellerStepFour = ({ formData }: { formData: SellerFormData }) => {
             <Store />
           </div>
           <div>
-            <p className="font-semibold text-slate-900">
-              {formData.storeName}
+            <p className="font-semibold text-slate-900">{formData.storeName}</p>
+            <p className="text-slate-500">
+              {formData.category
+                .map(
+                  (value) =>
+                    STORE_CATEGORIES.find((cat) => cat.value === value)?.label,
+                )
+                .filter(Boolean)
+                .join(", ")}
             </p>
-            <p className="text-slate-500">{formData.category}</p>
           </div>
         </div>
         <div className="text-[12px] text-slate-400 border-t border-slate-200 pt-2 mt-2">

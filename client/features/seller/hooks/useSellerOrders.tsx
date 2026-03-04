@@ -1,4 +1,4 @@
-import { api } from "@/lib/api";
+import { api } from "@/app/shared/lib/api";
 import { useQuery } from "@tanstack/react-query";
 import { SellerOrderItem } from "../types";
 

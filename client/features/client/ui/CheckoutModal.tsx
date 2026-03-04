@@ -6,7 +6,7 @@ import { CreditCard, Loader2, MapPin, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useClientProfile } from "../hooks/useClientProfile";
-import { showErrorToast } from "@/lib/toasts";
+import { showErrorToast } from "@/app/shared/lib/toasts";
 import { useCreateOrder } from "../hooks/useCreateOrder";
 
 const CheckoutModal = ({

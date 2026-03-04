@@ -1,7 +1,8 @@
-import { calculateDiscount } from "@/lib/calculateDiscount";
-import { Product, ProductCategories } from "../types";
+import { calculateDiscount } from "@/app/shared/lib/calculateDiscount";
+import { Product } from "../types";
 import { motion } from "framer-motion";
-import { showSuccessToast } from "@/lib/toasts";
+import { showSuccessToast } from "@/app/shared/lib/toasts";
+import { ProductCategories } from "@/app/shared/constants";
 
 export const ProductCard = ({
   product,

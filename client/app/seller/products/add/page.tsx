@@ -3,10 +3,11 @@
 import { ArrowLeft, Upload, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ProductCategories, useAddProduct } from "@/features/seller";
+import { useAddProduct } from "@/features/seller";
 import ConfirmationPopUp from "@/components/ConfirmationPopUp";
-import { calculateDiscount } from "@/lib/calculateDiscount";
-import { showErrorToast } from "@/lib/toasts";
+import { calculateDiscount } from "@/app/shared/lib/calculateDiscount";
+import { showErrorToast } from "@/app/shared/lib/toasts";
+import { ProductCategories } from "@/app/shared/constants";
 
 
 const ProductAdd = () => {

@@ -1,5 +1,3 @@
-import { ProductCategories } from "@/features/seller";
-
 export interface Product {
   id: string;
   seller_id: string;
@@ -21,6 +19,7 @@ export interface Product {
     avatarUrl: string | null;
     phone: string | null;
     user_id: string;
+    category: string[];
     users?: {
       first_name: string;
       last_name: string;
@@ -106,6 +105,4 @@ export interface Order {
   };
   order_items: OrderItem[];
 }
-
-export { ProductCategories };
 

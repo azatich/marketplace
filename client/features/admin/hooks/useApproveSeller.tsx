@@ -1,4 +1,4 @@
-import { api } from "@/lib/api"
+import { api } from "@/app/shared/lib/api"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner";
 
