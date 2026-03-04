@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -24,6 +24,14 @@ const ProductPage = () => {
   const { addToCart } = useCartStore();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
+
+  useEffect(() => {
+    if (product?.title) {
+      document.title = product.title;
+    } else {
+      document.title = "Товар";
+    }
+  }, [product])
 
   if (isLoading) {
     return (
@@ -215,7 +223,7 @@ const ProductPage = () => {
                     className="w-12 h-12 rounded-full object-cover"
                   />
                 ) : (
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#8B7FFF] to-[#6DD5ED] flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-full bg-linear-to-br from-[#8B7FFF] to-[#6DD5ED] flex items-center justify-center">
                     <User className="w-6 h-6 text-white" />
                   </div>
                 )}

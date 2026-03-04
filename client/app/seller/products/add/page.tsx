@@ -29,16 +29,18 @@ const ProductAdd = () => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmLoading, setConfirmLoading] = useState(false);
 
+  useEffect(() => {
+    document.title = "Добавить новый продукт";
+  }, [])
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
     const newFiles = files.filter((file) => {
-      // Проверяем, что это изображение
       return file.type.startsWith("image/");
     });
 
-    // Создаем превью для новых файлов
     const newPreviews = newFiles.map((file) => URL.createObjectURL(file));
 
     setUploadedImages((prev) => [...prev, ...newFiles]);
@@ -46,16 +48,13 @@ const ProductAdd = () => {
   };
 
   const removeImage = (index: number) => {
-    // Освобождаем URL превью
     URL.revokeObjectURL(imagePreviews[index]);
 
-    // Удаляем из state
     setUploadedImages((prev) => prev.filter((_, i) => i !== index));
     setImagePreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
   const deleteAllUploadedImages = () => {
-    // Освобождаем все URL превью
     imagePreviews.forEach((preview) => URL.revokeObjectURL(preview));
 
     setUploadedImages([]);

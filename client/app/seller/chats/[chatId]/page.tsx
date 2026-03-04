@@ -245,7 +245,7 @@ export default function SellerChatPage({
                       <Ban className="w-3 h-3 shrink-0" /> <span>Данное сообщение удалено</span>
                     </p>
                   ) : (
-                    <p className="whitespace-pre-wrap break-words">{msg.text}</p>
+                    <p className="whitespace-pre-wrap wrap-break-word">{msg.text}</p>
                   )}
 
                   <div className={`flex items-center gap-1 mt-1 text-[10px] ${isMine ? "justify-end text-white/70" : "justify-start text-[#A0AEC0]"}`}>

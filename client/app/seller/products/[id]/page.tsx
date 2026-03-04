@@ -48,6 +48,10 @@ const ProductEdit = () => {
   });
 
   useEffect(() => {
+    document.title = product?.title || "Редактирование продукта ";
+  }, [product]);
+
+  useEffect(() => {
     if (product) {
       setProductForm({
         name: product.title,
