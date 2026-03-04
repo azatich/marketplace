@@ -181,7 +181,6 @@ export class ClientController {
     }
   }
 
-  // Получение одного товара по ID
   static async getProductById(req: Request, res: Response) {
     try {
       const { id } = req.params;
@@ -208,6 +207,7 @@ export class ClientController {
           description,
           avatarUrl,
           phone,
+          category,
           users (
             first_name,
             last_name,

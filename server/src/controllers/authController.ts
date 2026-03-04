@@ -85,81 +85,81 @@ export class AuthController {
     }
   }
 
-static async sellerSignup(req: Request, res: Response) {
-  try {
-    const {
-      email,
-      password,
-      storeName,
-      description,
-      category,
-      sellerFirstName,
-      sellerLastName,
-      phone,
-    } = req.body;
-
-    // 1. Проверка email (как и было)
-    const { data: existingUser } = await supabase
-      .from("users")
-      .select("email")
-      .eq("email", email)
-      .single();
-
-    if (existingUser) {
-      return res.status(409).json({ success: false, message: "Email уже занят" });
-    }
-
-    const passwordHash = await bcrypt.hash(password, 10);
-
-    // 2. Создаем пользователя (Триггер в БД тут же создаст запись в 'sellers')
-    const { data: userData, error: userError } = await supabase
-      .from("users")
-      .insert({
+  static async sellerSignup(req: Request, res: Response) {
+    try {
+      const {
         email,
-        password: passwordHash,
-        first_name: sellerFirstName,
-        last_name: sellerLastName,
-        role: UserRole.SELLER,
-      })
-      .select()
-      .single();
-
-    if (userError || !userData) {
-      console.error("User creation error:", userError);
-      return res.status(500).json({ success: false, message: "Ошибка создания пользователя" });
-    }
-
-    const { error: sellerError } = await supabase
-      .from("sellers")
-      .update({
-        storeName,      // Обновляем реальным названием магазина
+        password,
+        storeName,
         description,
-        phone,
         category,
-        approved: false // На всякий случай подтверждаем статус
-      })
-      .eq("user_id", userData.id); // Привязываемся к созданному ID
+        sellerFirstName,
+        sellerLastName,
+        phone,
+      } = req.body;
 
-    if (sellerError) {
-      await supabase.from("users").delete().eq("id", userData.id);
-      return res.status(500).json({
-        success: false,
-        message: "Ошибка при заполнении данных магазина",
-        error: sellerError.message
+      // 1. Проверка email (как и было)
+      const { data: existingUser } = await supabase
+        .from("users")
+        .select("email")
+        .eq("email", email)
+        .single();
+
+      if (existingUser) {
+        return res.status(409).json({ success: false, message: "Email уже занят" });
+      }
+
+      const passwordHash = await bcrypt.hash(password, 10);
+
+      // 2. Создаем пользователя (Триггер в БД тут же создаст запись в 'sellers')
+      const { data: userData, error: userError } = await supabase
+        .from("users")
+        .insert({
+          email,
+          password: passwordHash,
+          first_name: sellerFirstName,
+          last_name: sellerLastName,
+          role: UserRole.SELLER,
+        })
+        .select()
+        .single();
+
+      if (userError || !userData) {
+        console.error("User creation error:", userError);
+        return res.status(500).json({ success: false, message: "Ошибка создания пользователя", error: userError?.message});
+      }
+
+      const { error: sellerError } = await supabase
+        .from("sellers")
+        .update({
+          storeName,
+          description,
+          phone,
+          category,
+          approved: false
+        })
+        .eq("user_id", userData.id);
+
+      if (sellerError) {
+        await supabase.from("users").delete().eq("id", userData.id);
+        return res.status(500).json({
+          success: false,
+          message: "Ошибка при заполнении данных магазина",
+          error: sellerError.message
+        });
+      }
+
+      // 4. И только в самом конце отправляем ОДИН ответ
+      return res.status(201).json({
+        success: true,
+        message: "Заявка принята. Ожидайте одобрения администратором.",
       });
+
+    } catch (error) {
+      console.error("Signup error:", error);
+      return res.status(500).json({ success: false, message: "Внутренняя ошибка сервера" });
     }
-
-    // 4. И только в самом конце отправляем ОДИН ответ
-    return res.status(201).json({
-      success: true,
-      message: "Заявка принята. Ожидайте одобрения администратором.",
-    });
-
-  } catch (error) {
-    console.error("Signup error:", error);
-    return res.status(500).json({ success: false, message: "Внутренняя ошибка сервера" });
   }
-}
 
   static async login(req: Request, res: Response) {
     try {
