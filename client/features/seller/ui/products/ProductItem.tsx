@@ -15,6 +15,7 @@ import Link from "next/link";
 import { useToggleVisibility } from "../../hooks/useToggleVisibility";
 import { useDeleteMutation } from "../../hooks/useDeleteMutation";
 import { ProductItem } from "../../types";
+import Image from "next/image";
 
 export const ProductItemComponent = ({ product }: { product: ProductItem }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -52,13 +53,12 @@ export const ProductItemComponent = ({ product }: { product: ProductItem }) => {
         </span>
       )}
 
-      {/* Карусель изображений */}
       <div
         onClick={() => router.push(`/seller/products/${product.id}`)}
         className="aspect-square overflow-hidden bg-white/5 rounded-t-xl relative hover:cursor-pointer"
       >
         <AnimatePresence mode="wait">
-          <motion.img
+          <Image
             key={currentImageIndex}
             src={
               product.images[currentImageIndex] ||
@@ -66,10 +66,7 @@ export const ProductItemComponent = ({ product }: { product: ProductItem }) => {
             }
             alt={`${product.title} - ${currentImageIndex + 1}`}
             className="w-full h-full object-cover"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
+            fill
           />
         </AnimatePresence>
 

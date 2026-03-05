@@ -9,6 +9,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { showSuccessToast } from "@/app/shared/lib/toasts";
 import { ProductCategories } from "@/app/shared/constants";
+import Image from "next/image";
 
 const ProductEdit = () => {
   const params = useParams();
@@ -258,10 +259,11 @@ const ProductEdit = () => {
               <div className="grid grid-cols-4 gap-4">
                 {uploadedImages.map((imageUrl, index) => (
                   <div key={index} className="relative group">
-                    <img
+                    <Image
                       src={imageUrl}
                       alt={`Product ${index + 1}`}
                       className="w-full h-32 object-cover rounded-lg border border-white/10"
+                      fill
                     />
                     <button
                       type="button"
