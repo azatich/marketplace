@@ -3,10 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Search, Grid, List, Filter, X, Loader2 } from "lucide-react";
-import {
-  Product,
-  ProductFilters,
-} from "@/features/client/types";
+import { Product, ProductFilters } from "@/features/client/types";
 import { useRouter } from "next/navigation";
 import { ProductCard, useCartStore } from "@/features/client";
 import { ProductListItem } from "@/features/client/ui/ProductListItem";
@@ -91,8 +88,6 @@ const CatalogPage = () => {
   };
 
   return (
-    // Используем container px-4 для безопасных отступов на мобильных
-    // и md:px-6 lg:px-8 для более просторного вида на больших экранах
     <div className="container mx-auto px-4 md:px-6 py-6 sm:py-8">
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -100,12 +95,12 @@ const CatalogPage = () => {
         className="mb-6 sm:mb-8"
       >
         <h1 className="text-2xl sm:text-3xl font-bold mb-2">Каталог товаров</h1>
-        <p className="text-sm sm:text-base text-[#A0AEC0]">Найдите то, что вам нужно</p>
+        <p className="text-sm sm:text-base text-[#A0AEC0]">
+          Найдите то, что вам нужно
+        </p>
       </motion.div>
 
-      {/* Search and Controls */}
       <div className="mb-6 space-y-4">
-        {/* Search Bar */}
         <div className="relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#A0AEC0]" />
           <input
@@ -117,14 +112,11 @@ const CatalogPage = () => {
           />
         </div>
 
-        {/* Controls - ИСПРАВЛЕНО ДЛЯ МОБИЛЬНЫХ УСТРОЙСТВ */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-          
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => setShowFilters(!showFilters)}
-            // На мобилках кнопка занимает 100% ширины (w-full), на десктопе подстраивается
             className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-colors"
           >
             <Filter className="w-4 h-4" />
@@ -134,19 +126,35 @@ const CatalogPage = () => {
 
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <select
+              aria-label="Сортировка товаров"
               value={`${filters.sortBy || "created_at"}-${filters.sortOrder || "desc"}`}
               onChange={(e) => {
                 const [sortBy, sortOrder] = e.target.value.split("-");
                 handleSortChange(sortBy as any, sortOrder as any);
               }}
-              // На мобилках селект занимает всё доступное место (flex-1), скругляем углы
               className="flex-1 sm:flex-none px-3 sm:px-4 py-2.5 sm:py-2 bg-white/5 border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#8B7FFF]/50"
             >
-              <option className="bg-[#1A1F2E] text-white" value="created_at-desc">По новизне (новые)</option>
-              <option className="bg-[#1A1F2E] text-white" value="created_at-asc">По новизне (старые)</option>
-              <option className="bg-[#1A1F2E] text-white" value="price-asc">По цене (возрастание)</option>
-              <option className="bg-[#1A1F2E] text-white" value="price-desc">По цене (убывание)</option>
-              <option className="bg-[#1A1F2E] text-white" value="discount-desc">По размеру скидки</option>
+              <option
+                className="bg-[#1A1F2E] text-white"
+                value="created_at-desc"
+              >
+                По новизне (новые)
+              </option>
+              <option
+                className="bg-[#1A1F2E] text-white"
+                value="created_at-asc"
+              >
+                По новизне (старые)
+              </option>
+              <option className="bg-[#1A1F2E] text-white" value="price-asc">
+                По цене (возрастание)
+              </option>
+              <option className="bg-[#1A1F2E] text-white" value="price-desc">
+                По цене (убывание)
+              </option>
+              <option className="bg-[#1A1F2E] text-white" value="discount-desc">
+                По размеру скидки
+              </option>
             </select>
 
             <div className="flex items-center gap-1 bg-white/5 border border-white/10 rounded-xl p-1 shrink-0">
@@ -157,6 +165,7 @@ const CatalogPage = () => {
                     ? "bg-[#8B7FFF]/20 text-white"
                     : "text-[#A0AEC0] hover:text-white"
                 }`}
+                aria-label="Отображать сеткой"
               >
                 <Grid className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
@@ -167,6 +176,7 @@ const CatalogPage = () => {
                     ? "bg-[#8B7FFF]/20 text-white"
                     : "text-[#A0AEC0] hover:text-white"
                 }`}
+                aria-label="Отображать списком"
               >
                 <List className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
@@ -198,13 +208,22 @@ const CatalogPage = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                 {/* Category Filter */}
                 <div>
-                  <label className="block text-sm text-[#A0AEC0] mb-2">Категория</label>
+                  <label className="block text-sm text-[#A0AEC0] mb-2">
+                    Категория
+                  </label>
                   <select
                     value={filters.category || ""}
-                    onChange={(e) => handleFilterChange("category", e.target.value || undefined)}
+                    onChange={(e) =>
+                      handleFilterChange(
+                        "category",
+                        e.target.value || undefined,
+                      )
+                    }
                     className="w-full h-11 px-3 bg-white/5 border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#8B7FFF]/50"
                   >
-                    <option className="bg-[#1A1F2E]" value="">Все категории</option>
+                    <option className="bg-[#1A1F2E]" value="">
+                      Все категории
+                    </option>
                     {Object.entries(ProductCategories).map(([key, value]) => (
                       <option key={key} value={key} className="bg-[#1A1F2E]">
                         {value.title}
@@ -216,15 +235,24 @@ const CatalogPage = () => {
                 {/* Subcategory Filter */}
                 {filters.category && (
                   <div>
-                    <label className="block text-sm text-[#A0AEC0] mb-2">Подкатегория</label>
+                    <label className="block text-sm text-[#A0AEC0] mb-2">
+                      Подкатегория
+                    </label>
                     <select
                       value={filters.subcategory || ""}
-                      onChange={(e) => handleFilterChange("subcategory", e.target.value || undefined)}
+                      onChange={(e) =>
+                        handleFilterChange(
+                          "subcategory",
+                          e.target.value || undefined,
+                        )
+                      }
                       className="w-full h-11 px-3 bg-white/5 border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#8B7FFF]/50"
                     >
                       <option value="">Все подкатегории</option>
                       {Object.entries(
-                        ProductCategories[filters.category as keyof typeof ProductCategories]?.children || {},
+                        ProductCategories[
+                          filters.category as keyof typeof ProductCategories
+                        ]?.children || {},
                       ).map(([key, value]) => (
                         <option key={key} value={key} className="bg-[#1A1F2E]">
                           {value}
@@ -237,22 +265,40 @@ const CatalogPage = () => {
                 {/* Price Range */}
                 <div className="grid grid-cols-2 gap-2 sm:gap-4">
                   <div>
-                    <label className="block text-sm text-[#A0AEC0] mb-2">Цена от</label>
+                    <label className="block text-sm text-[#A0AEC0] mb-2">
+                      Цена от
+                    </label>
                     <input
                       type="number"
                       placeholder="0"
                       value={filters.minPrice || ""}
-                      onChange={(e) => handleFilterChange("minPrice", e.target.value ? parseFloat(e.target.value) : undefined)}
+                      onChange={(e) =>
+                        handleFilterChange(
+                          "minPrice",
+                          e.target.value
+                            ? parseFloat(e.target.value)
+                            : undefined,
+                        )
+                      }
                       className="w-full h-11 px-3 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder:text-[#A0AEC0] focus:outline-none focus:ring-2 focus:ring-[#8B7FFF]/50"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm text-[#A0AEC0] mb-2">Цена до</label>
+                    <label className="block text-sm text-[#A0AEC0] mb-2">
+                      Цена до
+                    </label>
                     <input
                       type="number"
                       placeholder="∞"
                       value={filters.maxPrice || ""}
-                      onChange={(e) => handleFilterChange("maxPrice", e.target.value ? parseFloat(e.target.value) : undefined)}
+                      onChange={(e) =>
+                        handleFilterChange(
+                          "maxPrice",
+                          e.target.value
+                            ? parseFloat(e.target.value)
+                            : undefined,
+                        )
+                      }
                       className="w-full h-11 px-3 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder:text-[#A0AEC0] focus:outline-none focus:ring-2 focus:ring-[#8B7FFF]/50"
                     />
                   </div>
@@ -265,10 +311,18 @@ const CatalogPage = () => {
                       type="checkbox"
                       id="hasDiscount"
                       checked={filters.hasDiscount || false}
-                      onChange={(e) => handleFilterChange("hasDiscount", e.target.checked || undefined)}
+                      onChange={(e) =>
+                        handleFilterChange(
+                          "hasDiscount",
+                          e.target.checked || undefined,
+                        )
+                      }
                       className="w-5 h-5 rounded bg-white/5 border-white/10 text-[#8B7FFF] focus:ring-[#8B7FFF]/50"
                     />
-                    <label htmlFor="hasDiscount" className="text-sm text-white cursor-pointer select-none">
+                    <label
+                      htmlFor="hasDiscount"
+                      className="text-sm text-white cursor-pointer select-none"
+                    >
                       Только товары со скидкой
                     </label>
                   </div>
@@ -286,7 +340,9 @@ const CatalogPage = () => {
         </div>
       ) : data?.pages[0]?.products.length === 0 ? (
         <div className="text-center py-16 px-4">
-          <p className="text-[#A0AEC0] text-lg">По вашему запросу товары не найдены</p>
+          <p className="text-[#A0AEC0] text-lg">
+            По вашему запросу товары не найдены
+          </p>
           <button
             onClick={clearFilters}
             className="mt-4 px-6 py-2 bg-white/5 hover:bg-white/10 rounded-xl transition-colors text-white"
@@ -303,7 +359,9 @@ const CatalogPage = () => {
             </div>
           ) : (
             // Отступы списка тоже подправлены
-            <div className="space-y-3 sm:space-y-4">{renderProducts("list")}</div>
+            <div className="space-y-3 sm:space-y-4">
+              {renderProducts("list")}
+            </div>
           )}
 
           <div

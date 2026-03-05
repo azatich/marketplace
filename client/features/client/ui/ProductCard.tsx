@@ -40,13 +40,13 @@ export const ProductCard = ({
           loading="lazy"
         />
         {discount > 0 && (
-          <div className="absolute top-2 right-2 bg-[#FF6B6B] text-white text-xs font-bold px-2 py-1 rounded">
+          <div className="absolute top-2 right-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-lg">
             -{discount}%
           </div>
         )}
       </div>
       <div className="p-4">
-        <h3 className="font-semibold line-clamp-2">{product.title}</h3>
+        <h2 className="font-semibold line-clamp-2">{product.title}</h2>
         <p className="text-sm text-gray-300 my-2">{subcategoryTitle}</p>
         <div className="flex items-center gap-2 mb-2">
           <span className="text-lg font-bold text-white">
