@@ -3,6 +3,7 @@ import { Product } from "../types";
 import { motion } from "framer-motion";
 import { showSuccessToast } from "@/app/shared/lib/toasts";
 import { ProductCategories } from "@/app/shared/constants";
+import Image from "next/image";
 
 export const ProductCard = ({
   product,
@@ -33,11 +34,12 @@ export const ProductCard = ({
       onClick={onClick}
     >
       <div className="relative aspect-square overflow-hidden">
-        <img
+        <Image
           src={product.images[0] || "/placeholder.jpg"}
           alt={product.title}
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-          loading="lazy"
+          fill
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+          className="object-cover group-hover:scale-110 transition-transform duration-300"
         />
         {discount > 0 && (
           <div className="absolute top-2 right-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-lg">

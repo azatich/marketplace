@@ -15,6 +15,7 @@ import { calculateDiscount } from "@/app/shared/lib/calculateDiscount";
 import { showSuccessToast, showErrorToast } from "@/app/shared/lib/toasts";
 import { useCartStore } from "@/features/client";
 import { ProductCategories, STORE_CATEGORIES } from "@/app/shared/constants";
+import Image from "next/image";
 
 const ProductPage = () => {
   const params = useParams();
@@ -31,7 +32,7 @@ const ProductPage = () => {
     } else {
       document.title = "Товар";
     }
-  }, [product])
+  }, [product]);
 
   if (isLoading) {
     return (
@@ -112,10 +113,12 @@ const ProductPage = () => {
           <div className="relative aspect-square bg-[#1A1F2E]/80 backdrop-blur-xl border border-white/5 rounded-xl overflow-hidden">
             {product.images.length > 0 ? (
               <>
-                <img
+                <Image
                   src={product.images[currentImageIndex]}
                   alt={product.title}
-                  className="w-full h-full object-cover"
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                 />
                 {product.images.length > 1 && (
                   <>

@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import LogoutButton from "@/components/Logout";
 import { useClientProfile } from "../hooks/useClientProfile";
+import Image from "next/image";
 
 const CartBadge = dynamic(
   () => import("../ui/CartBadge").then((mod) => mod.CartBadge),
@@ -70,7 +71,6 @@ export const Header = () => {
             </Link>
           </div>
 
-          {/* 2. Центр: Навигация (Только десктоп) */}
           <nav className="hidden md:flex items-center gap-8">
             {navLinks.map((link) => (
               <Link
@@ -88,9 +88,7 @@ export const Header = () => {
             ))}
           </nav>
 
-          {/* 3. Правая часть: Профиль + Выход */}
           <div className="flex items-center gap-2 sm:gap-4">
-            {/* Иконка корзины для мобилок (быстрый доступ) */}
             <Link
               href="/cart"
               className="md:hidden relative p-2 text-[#A0AEC0]"
@@ -105,10 +103,12 @@ export const Header = () => {
                 className="group relative w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden border border-white/10 hover:border-[#8B7FFF] transition-all"
               >
                 {avatarUrl ? (
-                  <img
+                  <Image
                     src={avatarUrl}
-                    alt={username}
-                    className="w-full h-full object-cover"
+                    alt={username || "User avatar"}
+                    fill
+                    className="object-cover"
+                    sizes="100px"
                   />
                 ) : (
                   <div className="w-full h-full bg-[#2D3748] flex items-center justify-center">

@@ -9,6 +9,7 @@ import { showErrorToast, showSuccessToast } from "@/app/shared/lib/toasts";
 import ConfirmationPopUp from "@/components/ConfirmationPopUp";
 import { useCartStore } from "@/features/client";
 import CheckoutModal from "@/features/client/ui/CheckoutModal";
+import Image from "next/image";
 const CartPage = () => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmLoading, setConfirmLoading] = useState(false);
@@ -149,9 +150,10 @@ const CartPage = () => {
                     className="w-24 h-24 shrink-0 rounded-lg overflow-hidden cursor-pointer"
                     onClick={() => router.push(`/product/${item.productId}`)}
                   >
-                    <img
-                      src={item.product.images[0] || "/placeholder.jpg"}
+                    <Image
+                      src={item.product.images[0] || "/images/product_placeholder.jpg"}
                       alt={item.product.title}
+                      fill
                       className="w-full h-full object-cover"
                     />
                   </div>
