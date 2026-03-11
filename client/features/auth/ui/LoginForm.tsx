@@ -69,7 +69,7 @@ export const LoginForm = () => {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-1.5">
           <label className="text-xs font-medium text-slate-700 ml-1">
-            Email
+            Эл. почта
           </label>
           <div className="relative group">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors">
@@ -88,7 +88,7 @@ export const LoginForm = () => {
 
         <div className="space-y-1.5">
           <label className="text-xs font-medium text-slate-700 ml-1">
-            Password
+            Пароль
           </label>
           <div className="relative group">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors">

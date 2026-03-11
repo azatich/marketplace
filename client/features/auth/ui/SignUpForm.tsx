@@ -81,11 +81,11 @@ export const SignUpForm = () => {
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-slate-700 ml-1">
-              First name
+              Имя
             </label>
             <input
               type="text"
-              placeholder="John"
+              placeholder="Введите имя"
               onChange={(e) =>
                 setFormData({ ...formData, firstName: e.target.value })
               }
@@ -95,11 +95,11 @@ export const SignUpForm = () => {
           </div>
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-slate-700 ml-1">
-              Last name
+              Фамилия
             </label>
             <input
               type="text"
-              placeholder="Doe"
+              placeholder="Введите фамилию"
               onChange={(e) =>
                 setFormData({ ...formData, lastName: e.target.value })
               }
@@ -111,7 +111,7 @@ export const SignUpForm = () => {
 
         <div className="space-y-1.5">
           <label className="text-xs font-medium text-slate-700 ml-1">
-            Email
+            Эл. почта
           </label>
           <div className="relative group">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors">
@@ -130,7 +130,7 @@ export const SignUpForm = () => {
 
         <div className="space-y-1.5">
           <label className="text-xs font-medium text-slate-700 ml-1">
-            Password
+            Пароль
           </label>
           <div className="relative group">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors">
@@ -138,7 +138,7 @@ export const SignUpForm = () => {
             </span>
             <input
               type={showPassword ? "text" : "password"}
-              placeholder="Create a password"
+              placeholder="Создайте надежный пароль"
               onChange={(e) =>
                 setFormData({ ...formData, password: e.target.value })
               }

@@ -12,9 +12,15 @@ const publicRoutes = ["/"];
 const authRoutes = ["/signup", "/signup-seller", "/login"];
 
 const protectedZones = {
-  admin: ["/admin"], 
-  seller: ["/seller/dashboard", "seller/products", "/seller/orders", "seller/settings", "seller/chats"],
-  client: ["/cart", "/orders", "/profile", '/catalog'],
+  admin: ["/admin"],
+  seller: [
+    "/seller/dashboard",
+    "seller/products",
+    "/seller/orders",
+    "seller/settings",
+    "seller/chats",
+  ],
+  client: ["/cart", "/orders", "/profile", "/catalog"],
 };
 
 async function verifyToken(token: string) {
@@ -41,7 +47,6 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
-
   const user = await verifyToken(token);
 
   if (!user) {
@@ -62,12 +67,16 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL(homeRoute, req.url));
   }
 
-  const isSellerZone = protectedZones.seller.some((r) => pathname.startsWith(r));
+  const isSellerZone = protectedZones.seller.some((r) =>
+    pathname.startsWith(r),
+  );
   if (isSellerZone && role !== "seller") {
     return NextResponse.redirect(new URL(homeRoute, req.url));
   }
 
-  const isClientZone = protectedZones.client.some((r) => pathname.startsWith(r));
+  const isClientZone = protectedZones.client.some((r) =>
+    pathname.startsWith(r),
+  );
   if (isClientZone && role !== "client") {
     return NextResponse.redirect(new URL(homeRoute, req.url));
   }
@@ -76,5 +85,7 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  matcher: [
+    "/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif)$).*)",
+  ],
 };
