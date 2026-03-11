@@ -147,14 +147,14 @@ const CartPage = () => {
                 <div className="flex gap-4">
                   {/* Product Image */}
                   <div
-                    className="w-24 h-24 shrink-0 rounded-lg overflow-hidden cursor-pointer"
+                    className="relative w-24 h-24 shrink-0 rounded-lg overflow-hidden cursor-pointer"
                     onClick={() => router.push(`/product/${item.productId}`)}
                   >
                     <Image
                       src={item.product.images[0] || "/images/product_placeholder.jpg"}
                       alt={item.product.title}
                       fill
-                      className="w-full h-full object-cover"
+                      className="object-cover"
                     />
                   </div>
 
